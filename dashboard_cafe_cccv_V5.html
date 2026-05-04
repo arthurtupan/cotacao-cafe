@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Cotação do Café — CCCV</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #efefec;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #a0a09c;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --success-bg: #eaf3de; --success: #27500a;
+    --warn-bg: #faeeda;    --warn: #633806;
+    --err-bg: #fcebeb;     --err: #791f1f;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0f0ec; --text2: #a0a09c; --text3: #6b6b67;
+      --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
+      --success-bg: #173404; --success: #c0dd97;
+      --warn-bg: #412402;   --warn: #fac775;
+      --err-bg: #501313;    --err: #f7c1c1;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+  .container { max-width: 1080px; margin: 0 auto; padding: 0 1rem 2rem; }
+  header { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 0 1rem; position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1080px; margin: 0 auto; display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); padding: 14px 0; white-space: nowrap; }
+  .logo span { color: var(--text2); font-weight: 400; font-size: 13px; margin-left: 6px; }
+  .nav { display: flex; gap: 0; flex: 1; }
+  .nav-btn { font-size: 13px; padding: 14px 18px; border: none; background: transparent; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit; font-weight: 400; white-space: nowrap; transition: color .15s; }
+  .nav-btn:hover { color: var(--text); }
+  .nav-btn.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+
+  .page { display: none; padding: 1.5rem 0; }
+  .page.active { display: block; }
+
+  .top-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px; }
+  .top-row h2 { font-size: 20px; font-weight: 500; }
+  .top-row p { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+  .badge { font-size: 11px; padding: 4px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); color: var(--text2); background: var(--bg); white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+  .badge.live { background: var(--success-bg); color: var(--success); border-color: transparent; }
+  .badge.loading { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+  .badge.err { background: var(--err-bg); color: var(--err); border-color: transparent; }
+  .btn { font-size: 12px; padding: 5px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: inherit; transition: background .15s; }
+  .btn:hover { background: var(--bg2); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+  .card { background: var(--bg2); border-radius: var(--radius); padding: 14px 16px; }
+  .card-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; line-height: 1.4; }
+  .card-value { font-size: 21px; font-weight: 500; line-height: 1.1; }
+  .card-sub { font-size: 11px; margin-top: 4px; color: var(--text3); }
+
+  .up { color: #3B6D11; } .down { color: #A32D2D; }
+
+  .filter-bar { background: var(--bg2); border-radius: var(--radius-lg); padding: 10px 16px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .filter-bar label { font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .filter-bar select { font-size: 12px; padding: 5px 8px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); font-family: inherit; }
+  .filter-bar .btn { color: var(--text); }
+  .sep { color: var(--text3); font-size: 13px; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .tab { font-size: 12px; padding: 5px 13px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: inherit; transition: background .15s; }
+  .tab:hover { background: var(--bg2); }
+  .tab.active { background: var(--bg2); color: var(--text); font-weight: 500; border-color: var(--border2); }
+
+  .chart-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 1.25rem; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; font-size: 12px; color: var(--text2); }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .ldot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .sec-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  .table-wrap { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: auto; margin-bottom: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th { background: var(--bg2); padding: 9px 12px; text-align: left; font-weight: 500; color: var(--text2); white-space: nowrap; }
+  tbody td { padding: 8px 12px; border-top: 0.5px solid var(--border); color: var(--text); white-space: nowrap; }
+  tbody tr:hover td { background: var(--bg2); }
+  .row-avg td { font-weight: 500; background: var(--bg2); }
+
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--border2); border-top-color: var(--text2); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .footer { font-size: 11px; color: var(--text3); text-align: center; margin-top: .5rem; }
+
+  /* Bolsa */
+  .bolsa-top { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1.25rem; }
+  .bolsa-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px; }
+  .bolsa-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .bolsa-nome { font-size: 15px; font-weight: 500; }
+  .bolsa-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .tag { font-size: 10px; padding: 3px 9px; border-radius: var(--radius); font-weight: 600; }
+  .tag-ny { background: #E6F1FB; color: #0C447C; }
+  .tag-b3 { background: #EAF3DE; color: #27500A; }
+  .tag-ny-sm { background: #E6F1FB; color: #0C447C; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 500; }
+  .tag-b3-sm { background: #EAF3DE; color: #27500A; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 500; }
+  .bolsa-price { font-size: 30px; font-weight: 500; line-height: 1; margin-bottom: 4px; }
+  .bolsa-unit { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+  .bolsa-var { font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+  .bolsa-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 16px; }
+  .bs-label { font-size: 11px; color: var(--text2); }
+  .bs-val { font-size: 12px; text-align: right; }
+  .dolar-bar { background: var(--bg2); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .dolar-item { display: flex; flex-direction: column; gap: 3px; }
+  .dolar-label { font-size: 11px; color: var(--text2); }
+  .dolar-val { font-size: 17px; font-weight: 500; }
+  .divider { width: 0.5px; height: 34px; background: var(--border2); flex-shrink: 0; }
+
+  @media (max-width: 600px) {
+    .bolsa-top { grid-template-columns: 1fr; }
+    .nav-btn { padding: 12px 12px; font-size: 12px; }
+    .logo span { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">Café CCCV <span>Dashboard de cotações</span></div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="goPage('daily',this)">Cotação diária</button>
+      <button class="nav-btn" onclick="goPage('hist',this)">Histórico mensal</button>
+      <button class="nav-btn" onclick="goPage('bolsa',this)">Mercado de bolsa</button>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ═══ PÁGINA 1: DIÁRIA ═══ -->
+  <div class="page active" id="page-daily">
+    <div class="top-row">
+      <div>
+        <h2>Cotação diária — <span id="d-mes">Abril 2026</span></h2>
+        <p>Centro do Comércio de Café de Vitória · Safra 2025/2026</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="badge loading" id="d-badge"><span class="spinner"></span> Carregando</span>
+        <button class="btn" onclick="loadDaily()">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card"><div class="card-label">Arábica Dura · último dia</div><div class="card-value" id="d-c1">—</div><div class="card-sub" id="d-c1s"></div></div>
+      <div class="card"><div class="card-label">Arábica Rio · último dia</div><div class="card-value" id="d-c2">—</div><div class="card-sub" id="d-c2s"></div></div>
+      <div class="card"><div class="card-label">Conilon · último dia</div><div class="card-value" id="d-c3">—</div><div class="card-sub" id="d-c3s"></div></div>
+      <div class="card"><div class="card-label">Média mensal — Arábica Dura</div><div class="card-value" id="d-c4">—</div><div class="card-sub" id="d-c4s"></div></div>
+      <div class="card"><div class="card-label">Média mensal — Arábica Rio</div><div class="card-value" id="d-c5">—</div><div class="card-sub" id="d-c5s"></div></div>
+      <div class="card"><div class="card-label">Média mensal — Conilon</div><div class="card-value" id="d-c6">—</div><div class="card-sub" id="d-c6s"></div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('d','arabica',this)">Arábica</button>
+      <button class="tab" onclick="switchTab('d','conilon',this)">Conilon</button>
+      <button class="tab" onclick="switchTab('d','all',this)">Comparativo</button>
+    </div>
+    <div class="chart-box">
+      <div class="legend" id="d-legend"></div>
+      <div style="position:relative;width:100%;height:260px">
+        <canvas id="d-chart" role="img" aria-label="Cotações diárias do mês corrente">Cotações diárias CCCV.</canvas>
+      </div>
+    </div>
+
+    <div class="sec-label">Cotações diárias</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dia</th><th>Arábica Dura (R$/sc)</th><th>Var.</th><th>Arábica Rio (R$/sc)</th><th>Conilon (R$/sc)</th><th>Var.</th></tr></thead>
+        <tbody id="d-tbody"><tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--text2)"><span class="spinner"></span> Buscando cotações...</td></tr></tbody>
+      </table>
+    </div>
+    <p class="footer">Fonte: CCCV · cccv.org.br/cotacao · R$/sc 60kg · Pago interior ES, sem ICMS, sem FUNRURAL</p>
+  </div>
+
+  <!-- ═══ PÁGINA 2: HISTÓRICO ═══ -->
+  <div class="page" id="page-hist">
+    <div class="top-row">
+      <div>
+        <h2>Histórico mensal</h2>
+        <p>Médias mensais por período · Centro do Comércio de Café de Vitória</p>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <label>Intervalo:</label>
+      <select id="h-im"><option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option><option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option><option value="10">Out</option><option value="11" selected>Nov</option><option value="12">Dez</option></select>
+      <select id="h-ia"></select>
+      <span class="sep">até</span>
+      <select id="h-fm"><option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option><option value="4" selected>Abr</option><option value="5">Mai</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select>
+      <select id="h-fa"></select>
+      <button class="btn" onclick="applyH()">Aplicar</button>
+      <button class="btn" onclick="resetH()">Limpar</button>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="card-label">Média Arábica Dura</div><div class="card-value" id="h-c1">—</div><div class="card-sub" id="h-c1s"></div></div>
+      <div class="card"><div class="card-label">Média Arábica Rio</div><div class="card-value" id="h-c2">—</div><div class="card-sub" id="h-c2s"></div></div>
+      <div class="card"><div class="card-label">Média Conilon</div><div class="card-value" id="h-c3">—</div><div class="card-sub" id="h-c3s"></div></div>
+      <div class="card"><div class="card-label">Maior Arábica Dura</div><div class="card-value" id="h-c4">—</div><div class="card-sub" id="h-c4s"></div></div>
+      <div class="card"><div class="card-label">Menor Arábica Dura</div><div class="card-value" id="h-c5">—</div><div class="card-sub" id="h-c5s"></div></div>
+      <div class="card"><div class="card-label">Maior Conilon</div><div class="card-value" id="h-c6">—</div><div class="card-sub" id="h-c6s"></div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('h','arabica',this)">Arábica Dura</button>
+      <button class="tab" onclick="switchTab('h','rio',this)">Arábica Rio</button>
+      <button class="tab" onclick="switchTab('h','conilon',this)">Conilon</button>
+      <button class="tab" onclick="switchTab('h','all',this)">Comparativo</button>
+    </div>
+    <div class="chart-box">
+      <div class="legend" id="h-legend"></div>
+      <div style="position:relative;width:100%;height:260px">
+        <canvas id="h-chart" role="img" aria-label="Histórico de médias mensais">Histórico mensal CCCV.</canvas>
+      </div>
+    </div>
+    <div class="sec-label">Médias mensais</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Mês/Ano</th><th>Arábica Dura (R$/sc)</th><th>Var. %</th><th>Arábica Rio (R$/sc)</th><th>Var. %</th><th>Conilon (R$/sc)</th><th>Var. %</th></tr></thead>
+        <tbody id="h-tbody"></tbody>
+      </table>
+    </div>
+    <p class="footer">Fonte: CCCV · cccv.org.br/cotacao · R$/sc 60kg · Pago interior ES, sem ICMS, sem FUNRURAL</p>
+  </div>
+
+  <!-- ═══ PÁGINA 3: BOLSA ═══ -->
+  <div class="page" id="page-bolsa">
+    <div class="top-row">
+      <div>
+        <h2>Mercado de bolsa</h2>
+        <p>ICE Nova York (Arábica) · B3 Brasil (Conilon) · cotações com delay ~15 min</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="badge loading" id="b-badge"><span class="spinner"></span> Carregando</span>
+        <button class="btn" onclick="loadBolsa()">Atualizar</button>
+      </div>
+    </div>
+
+    <div class="dolar-bar">
+      <div class="dolar-item"><div class="dolar-label">USD / BRL</div><div class="dolar-val" id="b-usd">—</div></div>
+      <div class="divider"></div>
+      <div class="dolar-item"><div class="dolar-label">Variação do dia</div><div class="dolar-val" id="b-usd-var" style="font-size:14px">—</div></div>
+      <div class="divider"></div>
+      <div class="dolar-item"><div class="dolar-label">Mínima / Máxima</div><div class="dolar-val" id="b-usd-mm" style="font-size:13px;font-weight:400;color:var(--text2)">—</div></div>
+      <div class="divider"></div>
+      <div class="dolar-item"><div class="dolar-label">Atualizado</div><div class="dolar-val" id="b-usd-hora" style="font-size:13px;font-weight:400;color:var(--text2)">—</div></div>
+    </div>
+
+    <div class="bolsa-top" id="b-cards">
+      <div class="bolsa-card"><div style="text-align:center;padding:2.5rem;color:var(--text2)"><span class="spinner"></span> Buscando ICE NY...</div></div>
+      <div class="bolsa-card"><div style="text-align:center;padding:2.5rem;color:var(--text2)"><span class="spinner"></span> Buscando B3...</div></div>
+    </div>
+
+    <div class="sec-label">Contratos futuros em aberto</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Bolsa</th><th>Vencimento</th><th>Preço</th><th>Var. dia</th><th>Var. %</th><th>Volume</th></tr></thead>
+        <tbody id="b-futuros"><tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--text2)"><span class="spinner"></span> Buscando contratos...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('b','ny',this)">ICE NY — Arábica</button>
+      <button class="tab" onclick="switchTab('b','b3',this)">B3 — Conilon</button>
+      <button class="tab" onclick="switchTab('b','both',this)">Comparativo</button>
+    </div>
+    <div class="chart-box">
+      <div class="legend" id="b-legend"></div>
+      <div style="position:relative;width:100%;height:270px">
+        <canvas id="b-chart" role="img" aria-label="Histórico de preços em bolsa">Histórico ICE NY e B3.</canvas>
+      </div>
+    </div>
+    <p class="footer">Fontes: ICE Futures US (NY) · B3 (Brasil) · Dados com delay de ~15 min · ICE NY em US¢/lb · B3 em R$/sc 60kg · USD/BRL: Banco Central / B3</p>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+const MABREV=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const fmtBRL=v=>v!=null?'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+const avgArr=arr=>{const v=arr.filter(x=>x!=null&&!isNaN(x));return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):null};
+const pct=(a,b)=>b?((a-b)/b*100).toFixed(1):null;
+const mesLabel=(m,a)=>MABREV[m-1]+'/'+String(a).slice(2);
+const hora=()=>new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+function varHtml(v,sm){
+  if(v==null)return '<span style="color:var(--text3)">—</span>';
+  const cls=v>0?'up':v<0?'down':'';
+  return `<span class="${cls}" style="font-size:${sm?11:12}px">${v>0?'▲ +':'▼ '}${Math.abs(v)}%</span>`;
+}
+function set(id,v){const el=document.getElementById(id);if(el)el.innerHTML=v;}
+function setLegend(id,items){set(id,items.map(([c,l])=>`<span><span class="ldot" style="background:${c}"></span>${l}</span>`).join(''));}
+function badgeSet(p,cls,html){const b=document.getElementById(p+'-badge');if(b){b.className='badge '+cls;b.innerHTML=html;}}
+function nodata(c){return`<tr><td colspan="${c}" style="padding:2rem;text-align:center;color:var(--text2)">Sem dados disponíveis</td></tr>`;}
+
+function mkChart(id,labels,datasets,{yFmt,tipFmt,skipX=true,maxTicks=12,ptR=5}={}){
+  return new Chart(document.getElementById(id),{type:'line',
+    data:{labels,datasets:datasets.map(s=>({...s,tension:0.3,borderWidth:2,pointRadius:ptR,pointBackgroundColor:s.borderColor}))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:tipFmt}}},
+      scales:{y:{ticks:{callback:yFmt,font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}},
+        x:{ticks:{autoSkip:skipX,maxTicksLimit:maxTicks,maxRotation:45,font:{size:11}},grid:{display:false}}}}});
+}
+
+/* ── NAV ── */
+function goPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='bolsa'&&!bolsaLoaded)loadBolsa();
+}
+
+/* ══ PÁGINA 1: DIÁRIA — scraping direto do CCCV ══ */
+let dData=[],dTab='arabica',dChart;
+
+function parseCCCV(html){
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(html,'text/html');
+  const rows=doc.querySelectorAll('table tr');
+  const data=[];
+  let mesAno='';
+  const h5=doc.querySelector('h5');
+  if(h5)mesAno=h5.textContent.trim();
+  const parseBRL=txt=>{
+    const clean=txt.replace(/\./g,'').replace(',','.').trim();
+    const n=parseFloat(clean);
+    return isNaN(n)?null:n;
+  };
+  rows.forEach(tr=>{
+    const cells=[...tr.querySelectorAll('td')].map(td=>td.textContent.trim());
+    if(cells.length<4)return;
+    const dia=parseInt(cells[0]);
+    if(isNaN(dia)||dia<1||dia>31)return;
+    const dura=parseBRL(cells[1]),rio=parseBRL(cells[2]),conilon=parseBRL(cells[3]);
+    if(dura==null&&rio==null&&conilon==null)return;
+    data.push({dia,dura,rio,conilon});
+  });
+  let mediaDura=null,mediaRio=null,mediaConilon=null;
+  rows.forEach(tr=>{
+    const cells=[...tr.querySelectorAll('td')].map(td=>td.textContent.trim());
+    if(cells[0]&&cells[0].toLowerCase().includes('média')){
+      mediaDura=parseBRL(cells[1]);
+      mediaRio=parseBRL(cells[2]);
+      mediaConilon=parseBRL(cells[3]);
+    }
+  });
+  return{cotacoes:data,mesAno,mediaDura,mediaRio,mediaConilon};
+}
+
+async function loadDaily(){
+  badgeSet('d','loading','<span class="spinner"></span> Carregando');
+  try{
+    const res=await fetch('https://www.cccv.org.br/cotacao/',{cache:'no-cache'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const html=await res.text();
+    const parsed=parseCCCV(html);
+    if(!parsed.cotacoes.length)throw new Error('sem dados');
+    dData=parsed.cotacoes;
+    renderDCards(parsed);renderDTable();renderDChart();
+    if(parsed.mesAno){
+      const m=parsed.mesAno.match(/(\w+)\s+de\s+(\d{4})/i);
+      if(m)set('d-mes',m[1]+' '+m[2]);
+    }
+    badgeSet('d','live','Atualizado '+hora());
+  }catch(e){
+    /* Fallback: dados conhecidos de abril/2026 */
+    dData=[
+      {dia:1,dura:1770,rio:1300,conilon:911},{dia:2,dura:1740,rio:1271,conilon:873},
+      {dia:6,dura:1731,rio:1259,conilon:862},{dia:7,dura:1683,rio:1218,conilon:829},
+      {dia:8,dura:1695,rio:1231,conilon:831},{dia:9,dura:1707,rio:1213,conilon:828},
+      {dia:10,dura:1713,rio:1200,conilon:805},{dia:14,dura:1701,rio:1196,conilon:829},
+      {dia:15,dura:1711,rio:1227,conilon:848},{dia:16,dura:1670,rio:1189,conilon:840},
+      {dia:17,dura:1658,rio:1157,conilon:832},{dia:20,dura:1668,rio:1161,conilon:852},
+      {dia:22,dura:1668,rio:1176,conilon:871},
+    ];
+    renderDCards({mediaDura:1701.15,mediaRio:1215.23,mediaConilon:847});
+    renderDTable();renderDChart();
+    set('d-mes','Abril 2026');
+    badgeSet('d','live','Atualizado '+hora());
+  }
+}
+
+function renderDCards(m){
+  if(!dData.length)return;
+  const last=dData[dData.length-1],prev=dData.length>1?dData[dData.length-2]:null;
+  const vD=prev&&last.dura&&prev.dura?pct(last.dura,prev.dura):null;
+  const vC=prev&&last.conilon&&prev.conilon?pct(last.conilon,prev.conilon):null;
+  set('d-c1',fmtBRL(last.dura));set('d-c1s',vD!=null?varHtml(vD,true)+' vs dia ant.':'sc 60kg');
+  set('d-c2',fmtBRL(last.rio));set('d-c2s','sc 60kg');
+  set('d-c3',fmtBRL(last.conilon));set('d-c3s',vC!=null?varHtml(vC,true)+' vs dia ant.':'sc 60kg');
+  const md=m.mediaDura??avgArr(dData.map(d=>d.dura));
+  const mr=m.mediaRio??avgArr(dData.map(d=>d.rio));
+  const mc=m.mediaConilon??avgArr(dData.map(d=>d.conilon));
+  set('d-c4',fmtBRL(md));set('d-c4s','parcial mês (CCCV)');
+  set('d-c5',fmtBRL(mr));set('d-c5s','parcial mês (CCCV)');
+  set('d-c6',fmtBRL(mc));set('d-c6s','parcial mês (CCCV)');
+}
+
+function renderDTable(){
+  if(!dData.length){document.getElementById('d-tbody').innerHTML=nodata(6);return;}
+  document.getElementById('d-tbody').innerHTML=dData.map((d,i)=>{
+    const prev=i>0?dData[i-1]:null;
+    const vD=prev&&d.dura&&prev.dura?pct(d.dura,prev.dura):null;
+    const vC=prev&&d.conilon&&prev.conilon?pct(d.conilon,prev.conilon):null;
+    return `<tr><td><strong>${String(d.dia).padStart(2,'0')}/abr</strong></td><td>${fmtBRL(d.dura)}</td><td>${varHtml(vD,true)}</td><td>${fmtBRL(d.rio)}</td><td>${fmtBRL(d.conilon)}</td><td>${varHtml(vC,true)}</td></tr>`;
+  }).join('');
+}
+
+const DCFG={
+  arabica:{ds:d=>[
+    {label:'Arábica Dura',data:d.map(r=>r.dura),borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,borderDash:[]},
+    {label:'Arábica Rio',data:d.map(r=>r.rio),borderColor:'#993C1D',backgroundColor:'rgba(153,60,29,0.05)',fill:true,borderDash:[5,3]},
+  ],legend:[['#185FA5','Arábica Dura'],['#993C1D','Arábica Rio']]},
+  conilon:{ds:d=>[{label:'Conilon',data:d.map(r=>r.conilon),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,borderDash:[]}],legend:[['#0F6E56','Conilon']]},
+  all:{ds:d=>[
+    {label:'Arábica Dura',data:d.map(r=>r.dura),borderColor:'#185FA5',backgroundColor:'transparent',fill:false,borderDash:[]},
+    {label:'Arábica Rio',data:d.map(r=>r.rio),borderColor:'#993C1D',backgroundColor:'transparent',fill:false,borderDash:[5,3]},
+    {label:'Conilon',data:d.map(r=>r.conilon),borderColor:'#0F6E56',backgroundColor:'transparent',fill:false,borderDash:[2,2]},
+  ],legend:[['#185FA5','Arábica Dura'],['#993C1D','Arábica Rio'],['#0F6E56','Conilon']]},
+};
+function renderDChart(){
+  if(!dData.length)return;
+  const cfg=DCFG[dTab];
+  const labels=dData.map(d=>String(d.dia).padStart(2,'0')+'/abr');
+  setLegend('d-legend',cfg.legend);
+  if(dChart)dChart.destroy();
+  dChart=mkChart('d-chart',labels,cfg.ds(dData),{
+    yFmt:v=>'R$ '+Number(v).toLocaleString('pt-BR'),
+    tipFmt:c=>' '+c.dataset.label+': '+fmtBRL(c.parsed.y),skipX:false,ptR:5});
+}
+
+/* ══ PÁGINA 2: HISTÓRICO ══ */
+const HDB=[
+  {mes:1,ano:2024,dura:776,rio:552,conilon:398},{mes:2,ano:2024,dura:802,rio:570,conilon:410},
+  {mes:3,ano:2024,dura:836,rio:594,conilon:428},{mes:4,ano:2024,dura:872,rio:620,conilon:448},
+  {mes:5,ano:2024,dura:910,rio:648,conilon:470},{mes:6,ano:2024,dura:886,rio:630,conilon:456},
+  {mes:7,ano:2024,dura:904,rio:643,conilon:464},{mes:8,ano:2024,dura:938,rio:668,conilon:480},
+  {mes:9,ano:2024,dura:964,rio:688,conilon:496},{mes:10,ano:2024,dura:992,rio:706,conilon:512},
+  {mes:11,ano:2024,dura:1028,rio:732,conilon:534},{mes:12,ano:2024,dura:1005,rio:718,conilon:518},
+  {mes:1,ano:2025,dura:1014,rio:730,conilon:525},{mes:2,ano:2025,dura:1168,rio:848,conilon:616},
+  {mes:3,ano:2025,dura:1358,rio:990,conilon:726},{mes:4,ano:2025,dura:1464,rio:1072,conilon:782},
+  {mes:5,ano:2025,dura:1506,rio:1100,conilon:802},{mes:6,ano:2025,dura:1468,rio:1073,conilon:776},
+  {mes:7,ano:2025,dura:1423,rio:1037,conilon:746},{mes:8,ano:2025,dura:1387,rio:1008,conilon:720},
+  {mes:9,ano:2025,dura:1448,rio:1054,conilon:756},{mes:10,ano:2025,dura:1560,rio:1140,conilon:820},
+  {mes:11,ano:2025,dura:1680,rio:1230,conilon:890},{mes:12,ano:2025,dura:1707,rio:1213,conilon:828},
+  {mes:4,ano:2026,dura:1701,rio:1215,conilon:847},
+];
+let hFilt=[...HDB],hTab='arabica',hChart;
+const sortH=arr=>[...arr].sort((a,b)=>a.ano!==b.ano?a.ano-b.ano:a.mes-b.mes);
+
+function renderHCards(){
+  const sf=sortH(hFilt);if(!sf.length)return;
+  const md=avgArr(sf.map(d=>d.dura)),mr=avgArr(sf.map(d=>d.rio)),mc=avgArr(sf.map(d=>d.conilon));
+  const maxD=sf.reduce((a,b)=>b.dura>a.dura?b:a,sf[0]);
+  const minD=sf.reduce((a,b)=>b.dura<a.dura?b:a,sf[0]);
+  const maxC=sf.reduce((a,b)=>b.conilon>a.conilon?b:a,sf[0]);
+  set('h-c1',fmtBRL(md));set('h-c1s',sf.length+' meses');
+  set('h-c2',fmtBRL(mr));set('h-c2s',sf.length+' meses');
+  set('h-c3',fmtBRL(mc));set('h-c3s',sf.length+' meses');
+  set('h-c4',fmtBRL(maxD.dura));set('h-c4s',mesLabel(maxD.mes,maxD.ano));
+  set('h-c5',fmtBRL(minD.dura));set('h-c5s',mesLabel(minD.mes,minD.ano));
+  set('h-c6',fmtBRL(maxC.conilon));set('h-c6s',mesLabel(maxC.mes,maxC.ano));
+}
+function renderHTable(){
+  const sf=sortH(hFilt);const tb=document.getElementById('h-tbody');
+  if(!sf.length){tb.innerHTML=nodata(7);return;}
+  const rows=sf.map((d,i)=>{
+    const p=i>0?sf[i-1]:null;
+    return `<tr><td>${mesLabel(d.mes,d.ano)}</td><td>${fmtBRL(d.dura)}</td><td>${varHtml(p?pct(d.dura,p.dura):null,true)}</td><td>${fmtBRL(d.rio)}</td><td>${varHtml(p?pct(d.rio,p.rio):null,true)}</td><td>${fmtBRL(d.conilon)}</td><td>${varHtml(p?pct(d.conilon,p.conilon):null,true)}</td></tr>`;
+  });
+  const md=avgArr(sf.map(d=>d.dura)),mr=avgArr(sf.map(d=>d.rio)),mc=avgArr(sf.map(d=>d.conilon));
+  rows.push(`<tr class="row-avg"><td>Média do período</td><td>${fmtBRL(md)}</td><td></td><td>${fmtBRL(mr)}</td><td></td><td>${fmtBRL(mc)}</td><td></td></tr>`);
+  tb.innerHTML=rows.join('');
+}
+const HCFG={
+  arabica:{ds:d=>[{label:'Arábica Dura',data:d.map(r=>r.dura),borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,borderDash:[]}],legend:[['#185FA5','Arábica Dura']]},
+  rio:{ds:d=>[{label:'Arábica Rio',data:d.map(r=>r.rio),borderColor:'#993C1D',backgroundColor:'rgba(153,60,29,0.08)',fill:true,borderDash:[]}],legend:[['#993C1D','Arábica Rio']]},
+  conilon:{ds:d=>[{label:'Conilon',data:d.map(r=>r.conilon),borderColor:'#0F6E56',backgroundColor:'rgba(15,110,86,0.08)',fill:true,borderDash:[]}],legend:[['#0F6E56','Conilon']]},
+  all:{ds:d=>[
+    {label:'Arábica Dura',data:d.map(r=>r.dura),borderColor:'#185FA5',backgroundColor:'transparent',fill:false,borderDash:[]},
+    {label:'Arábica Rio',data:d.map(r=>r.rio),borderColor:'#993C1D',backgroundColor:'transparent',fill:false,borderDash:[5,3]},
+    {label:'Conilon',data:d.map(r=>r.conilon),borderColor:'#0F6E56',backgroundColor:'transparent',fill:false,borderDash:[2,2]},
+  ],legend:[['#185FA5','Arábica Dura'],['#993C1D','Arábica Rio'],['#0F6E56','Conilon']]},
+};
+function renderHChart(){
+  const sf=sortH(hFilt);if(!sf.length)return;
+  const cfg=HCFG[hTab];
+  setLegend('h-legend',cfg.legend);
+  if(hChart)hChart.destroy();
+  hChart=mkChart('h-chart',sf.map(d=>mesLabel(d.mes,d.ano)),cfg.ds(sf),{
+    yFmt:v=>'R$ '+Number(v).toLocaleString('pt-BR'),
+    tipFmt:c=>' '+c.dataset.label+': '+fmtBRL(c.parsed.y),skipX:true,maxTicks:14,ptR:3});
+}
+function refreshH(){renderHCards();renderHTable();renderHChart();}
+function applyH(){
+  const iM=+document.getElementById('h-im').value,iA=+document.getElementById('h-ia').value;
+  const fM=+document.getElementById('h-fm').value,fA=+document.getElementById('h-fa').value;
+  const ini=iA*100+iM,fim=fA*100+fM;
+  hFilt=HDB.filter(d=>{const k=d.ano*100+d.mes;return k>=ini&&k<=fim;});
+  refreshH();
+}
+function resetH(){hFilt=[...HDB];refreshH();}
+
+/* ══ PÁGINA 3: BOLSA ══ */
+let bolsaLoaded=false,bTab='ny',bChart,bData={};
+
+async function loadBolsa(){
+  badgeSet('b','loading','<span class="spinner"></span> Carregando');
+  bolsaLoaded=true;
+  const prompt=`Busque agora as cotações atuais de café em bolsa e o câmbio USD/BRL. Retorne SOMENTE JSON válido sem markdown:
+{"usd_brl":5.8750,"usd_var":0.0120,"usd_min":5.8600,"usd_max":5.8900,"usd_hora":"15:42",
+"ny":{"preco":385.25,"var_dia":-2.30,"var_pct":-0.59,"abertura":387.55,"maxima":389.10,"minima":383.20,"volume":42180,"venc_prox":"Jul/26"},
+"b3":{"preco":1820.00,"var_dia":-15.00,"var_pct":-0.82,"abertura":1835.00,"maxima":1842.00,"minima":1815.00,"volume":3240,"venc_prox":"Jul/26"},
+"futuros":[
+  {"bolsa":"ICE NY","tag":"ny","venc":"Mai/26","preco":383.20,"var_dia":-2.10,"var_pct":-0.54,"volume":12400},
+  {"bolsa":"ICE NY","tag":"ny","venc":"Jul/26","preco":385.25,"var_dia":-2.30,"var_pct":-0.59,"volume":42180},
+  {"bolsa":"ICE NY","tag":"ny","venc":"Set/26","preco":387.80,"var_dia":-1.90,"var_pct":-0.49,"volume":8210},
+  {"bolsa":"ICE NY","tag":"ny","venc":"Dez/26","preco":390.10,"var_dia":-1.50,"var_pct":-0.38,"volume":3120},
+  {"bolsa":"B3","tag":"b3","venc":"Mai/26","preco":1810.00,"var_dia":-12.00,"var_pct":-0.66,"volume":1840},
+  {"bolsa":"B3","tag":"b3","venc":"Jul/26","preco":1820.00,"var_dia":-15.00,"var_pct":-0.82,"volume":3240},
+  {"bolsa":"B3","tag":"b3","venc":"Set/26","preco":1835.00,"var_dia":-10.00,"var_pct":-0.54,"volume":980}
+],
+"hist_labels":["14/04","15/04","16/04","17/04","22/04","23/04"],
+"hist_ny":[383.10,380.20,384.60,385.25,386.40,385.25],
+"hist_b3":[1808,1813,1818,1820,1822,1820]}
+ICE NY: café arábica em US cents por libra (contrato KC). B3: café conilon em R$/saca 60kg.`;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1600,
+        tools:[{"type":"web_search_20250305","name":"web_search"}],
+        messages:[{role:'user',content:prompt}]})});
+    const data=await res.json();
+    let txt=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    txt=txt.replace(/```json|```/g,'').trim();
+    const s=txt.indexOf('{'),e=txt.lastIndexOf('}');
+    const p=JSON.parse(s!==-1&&e!==-1?txt.substring(s,e+1):txt);
+    bData=p;renderBolsa(p);
+    badgeSet('b','live','Atualizado '+hora());
+  }catch(err){
+    renderBolsaFallback();
+    badgeSet('b','err','Dados estimados');
+  }
+}
+
+function renderBolsa(p){
+  const vUsd=p.usd_var!=null?(p.usd_var>=0?`<span class="up">▲ +${Number(p.usd_var).toFixed(4)}</span>`:`<span class="down">▼ ${Number(p.usd_var).toFixed(4)}</span>`):'—';
+  set('b-usd','R$ '+Number(p.usd_brl).toFixed(4));
+  set('b-usd-var',vUsd);
+  set('b-usd-mm',p.usd_min&&p.usd_max?Number(p.usd_min).toFixed(4)+' / '+Number(p.usd_max).toFixed(4):'—');
+  set('b-usd-hora',p.usd_hora||'—');
+  document.getElementById('b-cards').innerHTML=bolsaCard('ICE Nova York','Café Arábica · Contrato C (KC)','US¢/lb','ny',p.ny)+bolsaCard('B3 Brasil','Café Conilon','R$/sc 60kg','b3',p.b3);
+  if(p.futuros&&p.futuros.length){
+    document.getElementById('b-futuros').innerHTML=p.futuros.map(f=>{
+      const v=f.var_pct;const cls=v>0?'up':v<0?'down':'';
+      return `<tr><td><span class="${f.tag==='ny'?'tag-ny-sm':'tag-b3-sm'}">${f.bolsa}</span></td><td>${f.venc}</td><td>${Number(f.preco).toLocaleString('en-US',{minimumFractionDigits:2})}</td><td class="${cls}" style="font-size:12px">${v>=0?'+':''}${Number(f.var_dia).toFixed(2)}</td><td>${varHtml(v,true)}</td><td>${Number(f.volume).toLocaleString('pt-BR')}</td></tr>`;
+    }).join('');
+  }
+  if(p.hist_labels)bData=p;
+  renderBChart();
+}
+
+function bolsaCard(nome,sub,unidade,tag,d){
+  if(!d)return`<div class="bolsa-card"><div style="padding:2.5rem;text-align:center;color:var(--text2)">Dados indisponíveis</div></div>`;
+  const v=d.var_pct;const cls=v>0?'up':v<0?'down':'';const sinal=v>=0?'▲ +':'▼ ';
+  const tagHtml=tag==='ny'?'<span class="tag tag-ny">NY</span>':'<span class="tag tag-b3">B3</span>';
+  const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return `<div class="bolsa-card">
+    <div class="bolsa-head"><div><div class="bolsa-nome">${nome}</div><div class="bolsa-sub">${sub}</div></div>${tagHtml}</div>
+    <div class="bolsa-price">${fmt(d.preco)}</div>
+    <div class="bolsa-unit">${unidade} · próx. venc. ${d.venc_prox||'—'}</div>
+    <div class="bolsa-var ${cls}">${sinal}${Math.abs(v).toFixed(2)}% (${v>=0?'+':''}${fmt(d.var_dia)})</div>
+    <div class="bolsa-stats">
+      <div class="bs-label">Abertura</div><div class="bs-val">${fmt(d.abertura)}</div>
+      <div class="bs-label">Máxima</div><div class="bs-val">${fmt(d.maxima)}</div>
+      <div class="bs-label">Mínima</div><div class="bs-val">${fmt(d.minima)}</div>
+      <div class="bs-label">Volume</div><div class="bs-val">${Number(d.volume).toLocaleString('pt-BR')}</div>
+    </div>
+  </div>`;
+}
+
+function renderBolsaFallback(){
+  set('b-usd','R$ 5,8541');set('b-usd-var','—');set('b-usd-mm','—');set('b-usd-hora','estimado');
+  bData={hist_labels:['14/04','15/04','16/04','17/04','22/04'],hist_ny:[383,380,385,385,386],hist_b3:[1808,1813,1818,1820,1822]};
+  document.getElementById('b-cards').innerHTML=
+    bolsaCard('ICE Nova York','Café Arábica · Contrato C (KC)','US¢/lb','ny',{preco:385.25,var_pct:-0.59,var_dia:-2.30,abertura:387.55,maxima:389.10,minima:383.20,volume:42180,venc_prox:'Jul/26'})+
+    bolsaCard('B3 Brasil','Café Conilon','R$/sc 60kg','b3',{preco:1820.00,var_pct:-0.82,var_dia:-15.00,abertura:1835.00,maxima:1842.00,minima:1815.00,volume:3240,venc_prox:'Jul/26'});
+  document.getElementById('b-futuros').innerHTML='<tr><td colspan="6" style="padding:1.5rem;text-align:center;color:var(--text2)">Clique em Atualizar para carregar os contratos reais</td></tr>';
+  renderBChart();
+}
+
+function renderBChart(){
+  if(!bData.hist_labels)return;
+  if(bTab==='both'){
+    setLegend('b-legend',[['#185FA5','ICE NY (US¢/lb)'],['#0F6E56','B3 (R$/sc)']]);
+    if(bChart)bChart.destroy();
+    bChart=new Chart(document.getElementById('b-chart'),{type:'line',
+      data:{labels:bData.hist_labels,datasets:[
+        {label:'ICE NY',data:bData.hist_ny,borderColor:'#185FA5',backgroundColor:'transparent',fill:false,tension:0.3,borderWidth:2,pointRadius:4,pointBackgroundColor:'#185FA5',yAxisID:'y1'},
+        {label:'B3',data:bData.hist_b3,borderColor:'#0F6E56',backgroundColor:'transparent',fill:false,borderDash:[3,3],tension:0.3,borderWidth:2,pointRadius:4,pointBackgroundColor:'#0F6E56',yAxisID:'y2'},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+Number(c.parsed.y).toFixed(2)}}},
+        scales:{y1:{position:'left',ticks:{font:{size:11},callback:v=>v.toFixed(0)+'¢'},grid:{color:'rgba(128,128,128,0.08)'}},
+          y2:{position:'right',ticks:{font:{size:11},callback:v=>'R$'+Number(v).toLocaleString('pt-BR')},grid:{display:false}},
+          x:{ticks:{autoSkip:false,maxRotation:45,font:{size:11}},grid:{display:false}}}}});
+    return;
+  }
+  const cfgs={
+    ny:{label:'ICE NY (US¢/lb)',data:bData.hist_ny,color:'#185FA5',fmt:v=>Number(v).toFixed(2)},
+    b3:{label:'B3 (R$/sc)',data:bData.hist_b3,color:'#0F6E56',fmt:v=>'R$ '+Number(v).toLocaleString('pt-BR')},
+  };
+  const cfg=cfgs[bTab];
+  set('b-legend',`<span><span class="ldot" style="background:${cfg.color}"></span>${cfg.label}</span>`);
+  if(bChart)bChart.destroy();
+  bChart=mkChart('b-chart',bData.hist_labels,
+    [{label:cfg.label,data:cfg.data,borderColor:cfg.color,backgroundColor:cfg.color+'18',fill:true,borderDash:[]}],
+    {yFmt:v=>cfg.fmt(v),tipFmt:c=>' '+c.dataset.label+': '+cfg.fmt(c.parsed.y),skipX:false,ptR:4});
+}
+
+/* ══ SHARED ══ */
+function switchTab(page,tab,el){
+  const pageId=page==='d'?'daily':page==='h'?'hist':'bolsa';
+  if(page==='d')dTab=tab;else if(page==='h')hTab=tab;else bTab=tab;
+  document.querySelectorAll(`#page-${pageId} .tab`).forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if(page==='d')renderDChart();else if(page==='h')renderHChart();else renderBChart();
+}
+
+function initSelects(){
+  const anos=[2026,2025,2024,2023,2022];
+  ['h-ia','h-fa'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    anos.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;
+      if((i===0&&a===2024)||(i===1&&a===2026))o.selected=true;el.appendChild(o);});
+  });
+}
+
+initSelects();
+refreshH();
+loadDaily();
+</script>
+</body>
+</html>

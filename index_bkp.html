@@ -47,17 +47,6 @@
   .btn{font-size:12px;padding:5px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;transition:background .15s}
   .btn:hover{background:var(--bg2)}
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem}
-  /* Mobile: dois grupos lado a lado — "último dia" e "média mensal" */
-  @media(max-width:599px){
-    .cards-daily{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
-    .cards-daily .card-group{display:flex;flex-direction:column;gap:8px}
-    .cards-daily .group-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:0 2px;margin-bottom:2px}
-  }
-  @media(min-width:600px){
-    .cards-daily{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem}
-    .cards-daily .card-group{display:contents}
-    .cards-daily .group-label{display:none}
-  }
   .card{background:var(--bg2);border-radius:var(--radius);padding:14px 16px}
   .card-label{font-size:11px;color:var(--text2);margin-bottom:5px;line-height:1.4}
   .card-value{font-size:21px;font-weight:500;line-height:1.1}
@@ -142,19 +131,13 @@
         <button class="btn" onclick="loadDaily()">Atualizar</button>
       </div>
     </div>
-    <div class="cards-daily">
-      <div class="card-group">
-        <div class="group-label">Último dia</div>
-        <div class="card"><div class="card-label">Arábica Dura · último dia</div><div class="card-value" id="d-c1">—</div><div class="card-sub" id="d-c1s"></div></div>
-        <div class="card"><div class="card-label">Arábica Rio · último dia</div><div class="card-value" id="d-c2">—</div><div class="card-sub" id="d-c2s"></div></div>
-        <div class="card"><div class="card-label">Conilon · último dia</div><div class="card-value" id="d-c3">—</div><div class="card-sub" id="d-c3s"></div></div>
-      </div>
-      <div class="card-group">
-        <div class="group-label">Média mensal</div>
-        <div class="card"><div class="card-label">Média mensal — Arábica Dura</div><div class="card-value" id="d-c4">—</div><div class="card-sub" id="d-c4s"></div></div>
-        <div class="card"><div class="card-label">Média mensal — Arábica Rio</div><div class="card-value" id="d-c5">—</div><div class="card-sub" id="d-c5s"></div></div>
-        <div class="card"><div class="card-label">Média mensal — Conilon</div><div class="card-value" id="d-c6">—</div><div class="card-sub" id="d-c6s"></div></div>
-      </div>
+    <div class="cards">
+      <div class="card"><div class="card-label">Arábica Dura · último dia</div><div class="card-value" id="d-c1">—</div><div class="card-sub" id="d-c1s"></div></div>
+      <div class="card"><div class="card-label">Arábica Rio · último dia</div><div class="card-value" id="d-c2">—</div><div class="card-sub" id="d-c2s"></div></div>
+      <div class="card"><div class="card-label">Conilon · último dia</div><div class="card-value" id="d-c3">—</div><div class="card-sub" id="d-c3s"></div></div>
+      <div class="card"><div class="card-label">Média mensal — Arábica Dura</div><div class="card-value" id="d-c4">—</div><div class="card-sub" id="d-c4s"></div></div>
+      <div class="card"><div class="card-label">Média mensal — Arábica Rio</div><div class="card-value" id="d-c5">—</div><div class="card-sub" id="d-c5s"></div></div>
+      <div class="card"><div class="card-label">Média mensal — Conilon</div><div class="card-value" id="d-c6">—</div><div class="card-sub" id="d-c6s"></div></div>
     </div>
     <div class="tabs">
       <button class="tab active" onclick="switchTab('d','arabica',this)">Arábica</button>
@@ -170,7 +153,7 @@
     <div class="sec-label">Cotações diárias</div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Dia</th><th>Arábica Dura (R$/sc)</th><th>Var.</th><th>Arábica Rio (R$/sc)</th><th>Var.</th><th>Conilon (R$/sc)</th><th>Var.</th></tr></thead>
+        <thead><tr><th>Dia</th><th>Arábica Dura (R$/sc)</th><th>Var.</th><th>Arábica Rio (R$/sc)</th><th>Conilon (R$/sc)</th><th>Var.</th></tr></thead>
         <tbody id="d-tbody"><tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--text2)"><span class="spinner"></span> Carregando cotações...</td></tr></tbody>
       </table>
     </div>
@@ -187,7 +170,7 @@
     </div>
     <div class="filter-bar">
       <label>Intervalo:</label>
-      <select id="h-im"><option value="1" selected>Jan</option><option value="2">Fev</option><option value="3">Mar</option><option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select>
+      <select id="h-im"><option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option><option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option><option value="10">Out</option><option value="11" selected>Nov</option><option value="12">Dez</option></select>
       <select id="h-ia"></select>
       <span class="sep">até</span>
       <select id="h-fm"><option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option><option value="4" selected>Abr</option><option value="5">Mai</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select>
@@ -358,17 +341,16 @@ function renderDCards(json){
 }
 
 function renderDTable(mesNum){
-  if(!dData.length){document.getElementById('d-tbody').innerHTML=nodata(7);return;}
+  if(!dData.length){document.getElementById('d-tbody').innerHTML=nodata(6);return;}
   const abrev=(MABREV[mesNum-1]||'abr').toLowerCase().slice(0,3);
   document.getElementById('d-tbody').innerHTML=dData.map((d,i)=>{
     const prev=i>0?dData[i-1]:null;
     const vD=prev&&d.dura&&prev.dura?pct(d.dura,prev.dura):null;
-    const vR=prev&&d.rio&&prev.rio?pct(d.rio,prev.rio):null;
     const vC=prev&&d.conilon&&prev.conilon?pct(d.conilon,prev.conilon):null;
     return `<tr>
       <td><strong>${String(d.dia).padStart(2,'0')}/${abrev}</strong></td>
       <td>${fmtBRL(d.dura)}</td><td>${varHtml(vD,true)}</td>
-      <td>${fmtBRL(d.rio)}</td><td>${varHtml(vR,true)}</td>
+      <td>${fmtBRL(d.rio)}</td>
       <td>${fmtBRL(d.conilon)}</td><td>${varHtml(vC,true)}</td>
     </tr>`;
   }).join('');
@@ -402,23 +384,19 @@ function renderDChart(mesNum){
    PÁGINA 2 — HISTÓRICO MENSAL
 ══════════════════════════════ */
 const HDB=[
-  // 2024 — médias mensais CCCV
   {mes:1,ano:2024,dura:776,rio:552,conilon:398},{mes:2,ano:2024,dura:802,rio:570,conilon:410},
   {mes:3,ano:2024,dura:836,rio:594,conilon:428},{mes:4,ano:2024,dura:872,rio:620,conilon:448},
   {mes:5,ano:2024,dura:910,rio:648,conilon:470},{mes:6,ano:2024,dura:886,rio:630,conilon:456},
   {mes:7,ano:2024,dura:904,rio:643,conilon:464},{mes:8,ano:2024,dura:938,rio:668,conilon:480},
   {mes:9,ano:2024,dura:964,rio:688,conilon:496},{mes:10,ano:2024,dura:992,rio:706,conilon:512},
   {mes:11,ano:2024,dura:1028,rio:732,conilon:534},{mes:12,ano:2024,dura:1005,rio:718,conilon:518},
-  // 2025 — médias mensais CCCV
   {mes:1,ano:2025,dura:1014,rio:730,conilon:525},{mes:2,ano:2025,dura:1168,rio:848,conilon:616},
   {mes:3,ano:2025,dura:1358,rio:990,conilon:726},{mes:4,ano:2025,dura:1464,rio:1072,conilon:782},
   {mes:5,ano:2025,dura:1506,rio:1100,conilon:802},{mes:6,ano:2025,dura:1468,rio:1073,conilon:776},
   {mes:7,ano:2025,dura:1423,rio:1037,conilon:746},{mes:8,ano:2025,dura:1387,rio:1008,conilon:720},
   {mes:9,ano:2025,dura:1448,rio:1054,conilon:756},{mes:10,ano:2025,dura:1560,rio:1140,conilon:820},
   {mes:11,ano:2025,dura:1680,rio:1230,conilon:890},{mes:12,ano:2025,dura:1707,rio:1213,conilon:828},
-  // 2026 — médias mensais CCCV (jan-abr confirmados; mai parcial)
-  {mes:1,ano:2026,dura:1760,rio:1290,conilon:870},{mes:2,ano:2026,dura:1690,rio:1240,conilon:845},
-  {mes:3,ano:2026,dura:1620,rio:1178,conilon:810},{mes:4,ano:2026,dura:1701,rio:1215,conilon:847},
+  {mes:4,ano:2026,dura:1701,rio:1215,conilon:847},
 ];
 let hFilt=[...HDB],hTab='arabica',hChart;
 const sortH=arr=>[...arr].sort((a,b)=>a.ano!==b.ano?a.ano-b.ano:a.mes-b.mes);
@@ -485,20 +463,22 @@ async function loadBolsa(){
   badgeSet('b','loading','<span class="spinner"></span> Carregando');
   bolsaLoaded=true;
   const prompt=`Busque agora as cotações atuais de café em bolsa e o câmbio USD/BRL. Retorne SOMENTE JSON válido sem markdown:
-{"usd_brl":4.9110,"usd_var":-0.0390,"usd_min":4.8986,"usd_max":4.9649,"usd_hora":"hoje",
-"ny":{"preco":288.00,"var_dia":-2.55,"var_pct":-0.88,"abertura":290.55,"maxima":291.20,"minima":287.40,"volume":18200,"venc_prox":"Jul/26"},
-"b3":{"preco":1420.00,"var_dia":-12.00,"var_pct":-0.84,"abertura":1432.00,"maxima":1436.00,"minima":1418.00,"volume":1840,"venc_prox":"Jul/26"},
+{"usd_brl":5.8750,"usd_var":0.0120,"usd_min":5.8600,"usd_max":5.8900,"usd_hora":"15:42",
+"ny":{"preco":385.25,"var_dia":-2.30,"var_pct":-0.59,"abertura":387.55,"maxima":389.10,"minima":383.20,"volume":42180,"venc_prox":"Jul/26"},
+"b3":{"preco":1820.00,"var_dia":-15.00,"var_pct":-0.82,"abertura":1835.00,"maxima":1842.00,"minima":1815.00,"volume":3240,"venc_prox":"Jul/26"},
 "futuros":[
-  {"bolsa":"ICE NY","tag":"ny","venc":"Jul/26","preco":288.00,"var_dia":-2.55,"var_pct":-0.88,"volume":18200},
-  {"bolsa":"ICE NY","tag":"ny","venc":"Set/26","preco":291.50,"var_dia":-2.10,"var_pct":-0.72,"volume":6300},
-  {"bolsa":"ICE NY","tag":"ny","venc":"Dez/26","preco":295.80,"var_dia":-1.80,"var_pct":-0.60,"volume":2100},
-  {"bolsa":"B3","tag":"b3","venc":"Jul/26","preco":1420.00,"var_dia":-12.00,"var_pct":-0.84,"volume":1840},
-  {"bolsa":"B3","tag":"b3","venc":"Set/26","preco":1435.00,"var_dia":-9.00,"var_pct":-0.62,"volume":620}
+  {"bolsa":"ICE NY","tag":"ny","venc":"Mai/26","preco":383.20,"var_dia":-2.10,"var_pct":-0.54,"volume":12400},
+  {"bolsa":"ICE NY","tag":"ny","venc":"Jul/26","preco":385.25,"var_dia":-2.30,"var_pct":-0.59,"volume":42180},
+  {"bolsa":"ICE NY","tag":"ny","venc":"Set/26","preco":387.80,"var_dia":-1.90,"var_pct":-0.49,"volume":8210},
+  {"bolsa":"ICE NY","tag":"ny","venc":"Dez/26","preco":390.10,"var_dia":-1.50,"var_pct":-0.38,"volume":3120},
+  {"bolsa":"B3","tag":"b3","venc":"Mai/26","preco":1810.00,"var_dia":-12.00,"var_pct":-0.66,"volume":1840},
+  {"bolsa":"B3","tag":"b3","venc":"Jul/26","preco":1820.00,"var_dia":-15.00,"var_pct":-0.82,"volume":3240},
+  {"bolsa":"B3","tag":"b3","venc":"Set/26","preco":1835.00,"var_dia":-10.00,"var_pct":-0.54,"volume":980}
 ],
-"hist_labels":["28/04","29/04","30/04","04/05","05/05","06/05"],
-"hist_ny":[291.20,289.80,290.55,289.10,288.90,288.00],
-"hist_b3":[1438,1432,1435,1428,1424,1420]}
-ICE NY: café arábica em US cents por libra (contrato KC). B3: café conilon em R$/saca 60kg. Use dados reais de hoje ${new Date().toLocaleDateString('pt-BR')} se disponíveis via web search.`;
+"hist_labels":["14/04","15/04","16/04","17/04","22/04","23/04"],
+"hist_ny":[383.10,380.20,384.60,385.25,386.40,385.25],
+"hist_b3":[1808,1813,1818,1820,1822,1820]}
+ICE NY: café arábica em US cents por libra (contrato KC). B3: café conilon em R$/saca 60kg.`;
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1600,
@@ -554,20 +534,12 @@ function bolsaCard(nome,sub,unidade,tag,d){
 }
 
 function renderBolsaFallback(){
-  set('b-usd','R$ 4,9110');set('b-usd-var','<span class="down">▼ -0.0390</span>');
-  set('b-usd-mm','4,8986 / 4,9649');set('b-usd-hora','06/05/2026');
-  bData={hist_labels:['28/04','29/04','30/04','04/05','05/05','06/05'],
-    hist_ny:[291.20,289.80,290.55,289.10,288.90,288.00],
-    hist_b3:[1438,1432,1435,1428,1424,1420]};
+  set('b-usd','—');set('b-usd-var','—');set('b-usd-mm','—');set('b-usd-hora','indisponível');
+  bData={hist_labels:['14/04','15/04','16/04','17/04','22/04'],hist_ny:[383,380,385,385,386],hist_b3:[1808,1813,1818,1820,1822]};
   document.getElementById('b-cards').innerHTML=
-    bolsaCard('ICE Nova York','Café Arábica · Contrato C (KC)','US¢/lb','ny',{preco:288.00,var_pct:-0.88,var_dia:-2.55,abertura:290.55,maxima:291.20,minima:287.40,volume:18200,venc_prox:'Jul/26'})+
-    bolsaCard('B3 Brasil','Café Conilon','R$/sc 60kg','b3',{preco:1420.00,var_pct:-0.84,var_dia:-12.00,abertura:1432.00,maxima:1436.00,minima:1418.00,volume:1840,venc_prox:'Jul/26'});
-  document.getElementById('b-futuros').innerHTML=`
-    <tr><td><span class="tag-ny-sm">ICE NY</span></td><td>Jul/26</td><td>288,00</td><td class="down" style="font-size:12px">-2,55</td><td><span class="down" style="font-size:11px">▼ -0.88%</span></td><td>18.200</td></tr>
-    <tr><td><span class="tag-ny-sm">ICE NY</span></td><td>Set/26</td><td>291,50</td><td class="down" style="font-size:12px">-2,10</td><td><span class="down" style="font-size:11px">▼ -0.72%</span></td><td>6.300</td></tr>
-    <tr><td><span class="tag-ny-sm">ICE NY</span></td><td>Dez/26</td><td>295,80</td><td class="down" style="font-size:12px">-1,80</td><td><span class="down" style="font-size:11px">▼ -0.60%</span></td><td>2.100</td></tr>
-    <tr><td><span class="tag-b3-sm">B3</span></td><td>Jul/26</td><td>1.420,00</td><td class="down" style="font-size:12px">-12,00</td><td><span class="down" style="font-size:11px">▼ -0.84%</span></td><td>1.840</td></tr>
-    <tr><td><span class="tag-b3-sm">B3</span></td><td>Set/26</td><td>1.435,00</td><td class="down" style="font-size:12px">-9,00</td><td><span class="down" style="font-size:11px">▼ -0.62%</span></td><td>620</td></tr>`;
+    bolsaCard('ICE Nova York','Café Arábica · Contrato C (KC)','US¢/lb','ny',{preco:385.25,var_pct:-0.59,var_dia:-2.30,abertura:387.55,maxima:389.10,minima:383.20,volume:42180,venc_prox:'Jul/26'})+
+    bolsaCard('B3 Brasil','Café Conilon','R$/sc 60kg','b3',{preco:1820.00,var_pct:-0.82,var_dia:-15.00,abertura:1835.00,maxima:1842.00,minima:1815.00,volume:3240,venc_prox:'Jul/26'});
+  document.getElementById('b-futuros').innerHTML='<tr><td colspan="6" style="padding:1.5rem;text-align:center;color:var(--text2)">Clique em Atualizar para carregar os contratos reais</td></tr>';
   renderBChart();
 }
 
@@ -614,7 +586,7 @@ function initSelects(){
   ['h-ia','h-fa'].forEach((id,i)=>{
     const el=document.getElementById(id);
     anos.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;
-      if((i===0&&a===2025)||(i===1&&a===2026))o.selected=true;el.appendChild(o);});
+      if((i===0&&a===2024)||(i===1&&a===2026))o.selected=true;el.appendChild(o);});
   });
 }
 initSelects();

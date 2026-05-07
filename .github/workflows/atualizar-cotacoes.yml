@@ -1,9 +1,9 @@
 name: Atualizar Cotações do Café
 
 on:
-  # Roda todo dia útil às 9h (horário de Brasília = 12h UTC)
+  # Roda todo dia útil às 18h (horário de Brasília = 12h UTC)
   schedule:
-    - cron: "0 12 * * 1-5"
+    - cron: "0 21 * * 1-5"
 
   # Permite disparar manualmente pela interface do GitHub
   workflow_dispatch:

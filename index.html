@@ -157,9 +157,9 @@
       </div>
     </div>
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('d','arabica',this)">Arábica</button>
+      <button class="tab active" onclick="switchTab('d','all',this)">Comparativo</button>
+      <button class="tab" onclick="switchTab('d','arabica',this)">Arábica</button>
       <button class="tab" onclick="switchTab('d','conilon',this)">Conilon</button>
-      <button class="tab" onclick="switchTab('d','all',this)">Comparativo</button>
     </div>
     <div class="chart-box">
       <div class="legend" id="d-legend"></div>
@@ -204,10 +204,10 @@
       <div class="card"><div class="card-label">Maior Conilon</div><div class="card-value" id="h-c6">—</div><div class="card-sub" id="h-c6s"></div></div>
     </div>
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('h','arabica',this)">Arábica Dura</button>
+      <button class="tab active" onclick="switchTab('h','all',this)">Comparativo</button>
+      <button class="tab" onclick="switchTab('h','arabica',this)">Arábica Dura</button>
       <button class="tab" onclick="switchTab('h','rio',this)">Arábica Rio</button>
       <button class="tab" onclick="switchTab('h','conilon',this)">Conilon</button>
-      <button class="tab" onclick="switchTab('h','all',this)">Comparativo</button>
     </div>
     <div class="chart-box">
       <div class="legend" id="h-legend"></div>
@@ -258,9 +258,9 @@
       </table>
     </div>
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('b','ny',this)">ICE NY — Arábica</button>
+      <button class="tab active" onclick="switchTab('b','both',this)">Comparativo</button>
+      <button class="tab" onclick="switchTab('b','ny',this)">ICE NY — Arábica</button>
       <button class="tab" onclick="switchTab('b','b3',this)">B3 — Conilon</button>
-      <button class="tab" onclick="switchTab('b','both',this)">Comparativo</button>
     </div>
     <div class="chart-box">
       <div class="legend" id="b-legend"></div>
@@ -305,14 +305,14 @@ function goPage(id,el){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
-  if(id==='bolsa'&&!bolsaLoaded)loadBolsa();
+  if(id==='bolsa'&&bolsaLoadedDate!==new Date().toDateString())loadBolsa();
 }
 
 /* ══════════════════════════════
    PÁGINA 1 — DIÁRIA
    Lê cotacoes.json gerado pelo GitHub Actions
 ══════════════════════════════ */
-let dData=[],dTab='arabica',dChart;
+let dData=[],dTab='all',dChart,dMesNum=new Date().getMonth()+1;
 
 async function loadDaily(){
   badgeSet('d','loading','<span class="spinner"></span> Carregando');
@@ -325,9 +325,10 @@ async function loadDaily(){
     dData=(json.cotacoes||[]).filter(d=>d.dura||d.rio||d.conilon);
     if(!dData.length)throw new Error('sem cotacoes');
 
+    dMesNum=json.mes_num||new Date().getMonth()+1;
     renderDCards(json);
-    renderDTable(json.mes_num||new Date().getMonth()+1);
-    renderDChart(json.mes_num||new Date().getMonth()+1);
+    renderDTable(dMesNum);
+    renderDChart(dMesNum);
 
     set('d-mes', json.mes || `${MABREV[(json.mes_num||new Date().getMonth()+1)-1]} ${json.ano||new Date().getFullYear()}`);
     badgeSet('d','live',`Atualizado em ${json.atualizado_em||hora()}`);
@@ -345,16 +346,17 @@ function renderDCards(json){
   if(!dData.length)return;
   const last=dData[dData.length-1],prev=dData.length>1?dData[dData.length-2]:null;
   const vD=prev&&last.dura&&prev.dura?pct(last.dura,prev.dura):null;
+  const vR=prev&&last.rio&&prev.rio?pct(last.rio,prev.rio):null;
   const vC=prev&&last.conilon&&prev.conilon?pct(last.conilon,prev.conilon):null;
   set('d-c1',fmtBRL(last.dura));set('d-c1s',vD!=null?varHtml(vD,true)+' vs dia ant.':'sc 60kg');
-  set('d-c2',fmtBRL(last.rio));set('d-c2s','sc 60kg');
+  set('d-c2',fmtBRL(last.rio));set('d-c2s',vR!=null?varHtml(vR,true)+' vs dia ant.':'sc 60kg');
   set('d-c3',fmtBRL(last.conilon));set('d-c3s',vC!=null?varHtml(vC,true)+' vs dia ant.':'sc 60kg');
   const md=json.media_dura??avgArr(dData.map(d=>d.dura));
   const mr=json.media_rio??avgArr(dData.map(d=>d.rio));
   const mc=json.media_conilon??avgArr(dData.map(d=>d.conilon));
-  set('d-c4',fmtBRL(md));set('d-c4s','média mensal CCCV');
-  set('d-c5',fmtBRL(mr));set('d-c5s','média mensal CCCV');
-  set('d-c6',fmtBRL(mc));set('d-c6s','média mensal CCCV');
+  set('d-c4',fmtBRL(md));set('d-c4s','média mensal');
+  set('d-c5',fmtBRL(mr));set('d-c5s','média mensal');
+  set('d-c6',fmtBRL(mc));set('d-c6s','média mensal');
 }
 
 function renderDTable(mesNum){
@@ -389,7 +391,8 @@ const DCFG={
 function renderDChart(mesNum){
   if(!dData.length)return;
   const cfg=DCFG[dTab];
-  const abrev=(MABREV[(mesNum||4)-1]||'abr').toLowerCase().slice(0,3);
+  if(mesNum!=null)dMesNum=mesNum;
+  const abrev=MABREV[dMesNum-1].toLowerCase().slice(0,3);
   const labels=dData.map(d=>String(d.dia).padStart(2,'0')+'/'+abrev);
   setLegend('d-legend',cfg.legend);
   if(dChart)dChart.destroy();
@@ -420,7 +423,7 @@ const HDB=[
   {mes:1,ano:2026,dura:1760,rio:1290,conilon:870},{mes:2,ano:2026,dura:1690,rio:1240,conilon:845},
   {mes:3,ano:2026,dura:1620,rio:1178,conilon:810},{mes:4,ano:2026,dura:1701,rio:1215,conilon:847},
 ];
-let hFilt=[...HDB],hTab='arabica',hChart;
+let hFilt=[...HDB],hTab='all',hChart;
 const sortH=arr=>[...arr].sort((a,b)=>a.ano!==b.ano?a.ano-b.ano:a.mes-b.mes);
 
 function renderHCards(){
@@ -479,38 +482,17 @@ function resetH(){hFilt=[...HDB];refreshH();}
 /* ══════════════════════════════
    PÁGINA 3 — BOLSA
 ══════════════════════════════ */
-let bolsaLoaded=false,bTab='ny',bChart,bData={};
+let bolsaLoadedDate=null,bTab='both',bChart,bData={};
 
 async function loadBolsa(){
   badgeSet('b','loading','<span class="spinner"></span> Carregando');
-  bolsaLoaded=true;
-  const prompt=`Busque agora as cotações atuais de café em bolsa e o câmbio USD/BRL. Retorne SOMENTE JSON válido sem markdown:
-{"usd_brl":4.9110,"usd_var":-0.0390,"usd_min":4.8986,"usd_max":4.9649,"usd_hora":"hoje",
-"ny":{"preco":288.00,"var_dia":-2.55,"var_pct":-0.88,"abertura":290.55,"maxima":291.20,"minima":287.40,"volume":18200,"venc_prox":"Jul/26"},
-"b3":{"preco":1420.00,"var_dia":-12.00,"var_pct":-0.84,"abertura":1432.00,"maxima":1436.00,"minima":1418.00,"volume":1840,"venc_prox":"Jul/26"},
-"futuros":[
-  {"bolsa":"ICE NY","tag":"ny","venc":"Jul/26","preco":288.00,"var_dia":-2.55,"var_pct":-0.88,"volume":18200},
-  {"bolsa":"ICE NY","tag":"ny","venc":"Set/26","preco":291.50,"var_dia":-2.10,"var_pct":-0.72,"volume":6300},
-  {"bolsa":"ICE NY","tag":"ny","venc":"Dez/26","preco":295.80,"var_dia":-1.80,"var_pct":-0.60,"volume":2100},
-  {"bolsa":"B3","tag":"b3","venc":"Jul/26","preco":1420.00,"var_dia":-12.00,"var_pct":-0.84,"volume":1840},
-  {"bolsa":"B3","tag":"b3","venc":"Set/26","preco":1435.00,"var_dia":-9.00,"var_pct":-0.62,"volume":620}
-],
-"hist_labels":["28/04","29/04","30/04","04/05","05/05","06/05"],
-"hist_ny":[291.20,289.80,290.55,289.10,288.90,288.00],
-"hist_b3":[1438,1432,1435,1428,1424,1420]}
-ICE NY: café arábica em US cents por libra (contrato KC). B3: café conilon em R$/saca 60kg. Use dados reais de hoje ${new Date().toLocaleDateString('pt-BR')} se disponíveis via web search.`;
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1600,
-        tools:[{"type":"web_search_20250305","name":"web_search"}],
-        messages:[{role:'user',content:prompt}]})});
-    const data=await res.json();
-    let txt=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-    txt=txt.replace(/```json|```/g,'').trim();
-    const s=txt.indexOf('{'),e=txt.lastIndexOf('}');
-    const p=JSON.parse(s!==-1&&e!==-1?txt.substring(s,e+1):txt);
+    const res=await fetch(`bolsa.json?v=${Date.now()}`,{cache:'no-store'});
+    if(!res.ok)throw new Error('HTTP '+res.status);
+    const p=await res.json();
     bData=p;renderBolsa(p);
-    badgeSet('b','live','Atualizado '+hora());
+    bolsaLoadedDate=new Date().toDateString();
+    badgeSet('b','live','Atualizado '+( p.atualizado_em||hora()));
   }catch(err){
     renderBolsaFallback();
     badgeSet('b','err','Dados estimados');

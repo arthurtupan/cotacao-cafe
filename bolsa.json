@@ -1,0 +1,68 @@
+{
+  "atualizado_em": "13/05/2026 11:06",
+  "fonte": "yfinance / ICE NY (KC=F) · USD/BRL (BRL=X)",
+  "usd_brl": 4.9173,
+  "usd_var": 0.0109,
+  "usd_min": 4.8903,
+  "usd_max": 4.9351,
+  "usd_hora": "13/05/2026",
+  "ny": {
+    "preco": 284.0,
+    "var_dia": -10.8,
+    "var_pct": -3.66,
+    "abertura": 275.4,
+    "maxima": 286.7,
+    "minima": 282.0,
+    "volume": 6467,
+    "venc_prox": "Set/26"
+  },
+  "b3": {
+    "preco": 1108.36,
+    "var_dia": null,
+    "var_pct": -3.66,
+    "abertura": null,
+    "maxima": null,
+    "minima": null,
+    "volume": 0,
+    "venc_prox": "Set/26",
+    "estimado": true
+  },
+  "futuros": [
+    {
+      "bolsa": "B3",
+      "tag": "b3",
+      "venc": "Set/26",
+      "preco": 1108.36,
+      "var_dia": null,
+      "var_pct": -3.66,
+      "volume": 0
+    }
+  ],
+  "hist_labels": [
+    "05/05",
+    "06/05",
+    "07/05",
+    "08/05",
+    "11/05",
+    "12/05",
+    "13/05"
+  ],
+  "hist_ny": [
+    305.85,
+    299.45,
+    291.05,
+    289.7,
+    298.6,
+    294.8,
+    284.0
+  ],
+  "hist_b3": [
+    1193.63,
+    1168.66,
+    1135.87,
+    1130.6,
+    1165.34,
+    1150.51,
+    1108.36
+  ]
+}

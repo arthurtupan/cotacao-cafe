@@ -120,6 +120,16 @@
   .company-links a{color:var(--text2);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .15s}
   .company-links a:hover{color:var(--text)}
   @media(max-width:500px){.company-footer-inner{flex-direction:column;align-items:flex-start;gap:12px}}
+  .config-section{background:var(--card);border-radius:12px;padding:1.5rem 2rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:1rem}
+  .config-section-title{font-size:1rem;font-weight:600;color:var(--text)}
+  .toggle-label{display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.95rem;color:var(--text)}
+  .toggle-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+  .cfg-times{display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:.25rem}
+  .cfg-field{display:flex;align-items:center;gap:.5rem;font-size:.9rem;color:var(--text2)}
+  .cfg-field-label{min-width:130px;color:var(--text)}
+  .cfg-field input[type=number]{width:72px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.9rem}
+  .cfg-unit{color:var(--text2)}
+  .cfg-hint{font-size:.78rem;color:var(--text2);margin:0}
 </style>
 </head>
 <body>
@@ -131,6 +141,7 @@
       <button class="nav-btn active" onclick="goPage('daily',this)">Cotação diária</button>
       <button class="nav-btn" onclick="goPage('hist',this)">Histórico mensal</button>
       <button class="nav-btn" onclick="goPage('bolsa',this)">Mercado de bolsa</button>
+      <button class="nav-btn" onclick="goPage('config',this)">⚙ Configurações</button>
     </nav>
   </div>
 </header>
@@ -237,7 +248,7 @@
     <div class="top-row">
       <div>
         <h2>Mercado de bolsa</h2>
-        <p>ICE Nova York (Arábica) · B3 Brasil (Conilon) · cotações com delay ~15 min</p>
+        <p>ICE Nova York (Arábica) · Conilon (estimativa) · cotações com delay ~15 min</p>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <span class="badge loading" id="b-badge"><span class="spinner"></span> Carregando</span>
@@ -272,7 +283,7 @@
     <div class="tabs">
       <button class="tab active" onclick="switchTab('b','both',this)">Comparativo</button>
       <button class="tab" onclick="switchTab('b','ny',this)">ICE NY — Arábica</button>
-      <button class="tab" onclick="switchTab('b','b3',this)">B3 — Conilon</button>
+      <button class="tab" onclick="switchTab('b','b3',this)">Estimativa — Conilon</button>
     </div>
     <div class="chart-box">
       <div class="legend" id="b-legend"></div>
@@ -281,6 +292,44 @@
       </div>
     </div>
     <p class="footer">Fontes: ICE Futures US (NY) · yfinance · ICE NY em US¢/lb · Conilon em R$/sc 60kg (estimativa) · Câmbio com delay ~15 min</p>
+  </div>
+
+  <!-- ═══ PÁGINA 4: CONFIGURAÇÕES ═══ -->
+  <div class="page" id="page-config">
+    <div class="top-row">
+      <div>
+        <h2>Configurações</h2>
+        <p>Personalização do painel de cotações</p>
+      </div>
+    </div>
+    <div class="config-section">
+      <div class="config-section-title">Rotação automática de abas</div>
+      <label class="toggle-label">
+        <input type="checkbox" id="cfg-slide-enabled">
+        Ativar rotação automática (modo display/kiosk)
+      </label>
+      <div class="cfg-times" id="cfg-times">
+        <div class="cfg-field">
+          <span class="cfg-field-label">Cotação Diária</span>
+          <input type="number" id="cfg-time-daily" min="5" max="3600" value="30">
+          <span class="cfg-unit">seg</span>
+        </div>
+        <div class="cfg-field">
+          <span class="cfg-field-label">Histórico Mensal</span>
+          <input type="number" id="cfg-time-hist" min="5" max="3600" value="20">
+          <span class="cfg-unit">seg</span>
+        </div>
+        <div class="cfg-field">
+          <span class="cfg-field-label">Mercado de Bolsa</span>
+          <input type="number" id="cfg-time-bolsa" min="5" max="3600" value="30">
+          <span class="cfg-unit">seg</span>
+        </div>
+      </div>
+      <div>
+        <button class="btn" onclick="saveConfig()">Salvar configurações</button>
+      </div>
+      <p class="cfg-hint">As configurações são salvas no navegador (localStorage) e persistem ao recarregar a página.</p>
+    </div>
   </div>
 
 </div>
@@ -334,6 +383,7 @@ function goPage(id,el){
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add('active');
   if(id==='bolsa'&&bolsaLoadedDate!==new Date().toDateString())loadBolsa();
+  if(id==='config'){stopSlide();loadConfig();}
 }
 
 /* ══════════════════════════════
@@ -614,7 +664,7 @@ function renderBChart(){
   }
   const cfgs={
     ny:{label:'ICE NY (US¢/lb)',data:bData.hist_ny,color:'#185FA5',fmt:v=>Number(v).toFixed(2)},
-    b3:{label:'B3 (R$/sc)',     data:bData.hist_b3,color:'#0F6E56',fmt:v=>'R$ '+Number(v).toLocaleString('pt-BR')},
+    b3:{label:'Estimativa (R$/sc)',data:bData.hist_b3,color:'#0F6E56',fmt:v=>'R$ '+Number(v).toLocaleString('pt-BR')},
   };
   const cfg=cfgs[bTab];
   set('b-legend',`<span><span class="ldot" style="background:${cfg.color}"></span>${cfg.label}</span>`);
@@ -622,6 +672,53 @@ function renderBChart(){
   bChart=mkChart('b-chart',bData.hist_labels,
     [{label:cfg.label,data:cfg.data,borderColor:cfg.color,backgroundColor:cfg.color+'18',fill:true,borderDash:[]}],
     {yFmt:v=>cfg.fmt(v),tipFmt:c=>' '+c.dataset.label+': '+cfg.fmt(c.parsed.y),skipX:false,ptR:4});
+}
+
+/* ══ CONFIG / ROTAÇÃO ══ */
+const SLIDE_PAGES=['daily','hist','bolsa'];
+let slideTimer=null,slideIdx=0;
+
+function navigateTo(id){
+  const btns=document.querySelectorAll('.nav-btn');
+  const idx=SLIDE_PAGES.indexOf(id);
+  if(idx>=0)goPage(id,btns[idx]);
+}
+
+function scheduleNext(){
+  const times=[
+    (+localStorage.getItem('slide_time_daily')||30)*1000,
+    (+localStorage.getItem('slide_time_hist') ||20)*1000,
+    (+localStorage.getItem('slide_time_bolsa')||30)*1000,
+  ];
+  slideTimer=setTimeout(()=>{
+    slideIdx=(slideIdx+1)%SLIDE_PAGES.length;
+    navigateTo(SLIDE_PAGES[slideIdx]);
+    scheduleNext();
+  },times[slideIdx]);
+}
+
+function startSlide(){stopSlide();slideIdx=0;scheduleNext();}
+function stopSlide(){clearTimeout(slideTimer);slideTimer=null;}
+
+function loadConfig(){
+  const el=document.getElementById('cfg-slide-enabled');
+  if(el)el.checked=localStorage.getItem('slide_enabled')==='1';
+  const td=document.getElementById('cfg-time-daily');
+  const th=document.getElementById('cfg-time-hist');
+  const tb=document.getElementById('cfg-time-bolsa');
+  if(td)td.value=localStorage.getItem('slide_time_daily')||30;
+  if(th)th.value=localStorage.getItem('slide_time_hist') ||20;
+  if(tb)tb.value=localStorage.getItem('slide_time_bolsa')||30;
+}
+
+function saveConfig(){
+  const enabled=document.getElementById('cfg-slide-enabled').checked;
+  localStorage.setItem('slide_enabled',   enabled?'1':'0');
+  localStorage.setItem('slide_time_daily',document.getElementById('cfg-time-daily').value);
+  localStorage.setItem('slide_time_hist', document.getElementById('cfg-time-hist').value);
+  localStorage.setItem('slide_time_bolsa',document.getElementById('cfg-time-bolsa').value);
+  stopSlide();
+  if(enabled)startSlide();
 }
 
 function tryRenderDiferencial(){
@@ -662,8 +759,9 @@ function initSelects(){
   });
 }
 initSelects();
-refreshH();
+applyH();
 loadDaily();
+if(localStorage.getItem('slide_enabled')==='1')startSlide();
 </script>
 </body>
 </html>

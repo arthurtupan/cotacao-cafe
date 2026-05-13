@@ -1,12 +1,10 @@
 import json
 import math
 from datetime import datetime, timezone, timedelta
+
 import yfinance as yf
 
 MABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-
-def fmt_mes(dt):
-    return f"{dt.day:02d}/{dt.month:02d}"
 
 def safe_float(v, digits=2):
     try:
@@ -16,7 +14,6 @@ def safe_float(v, digits=2):
         return None
 
 def venc_label(ticker_info):
-    """Tenta extrair o próximo vencimento do ticker."""
     try:
         exp = ticker_info.get('expireDate')
         if exp:
@@ -27,7 +24,8 @@ def venc_label(ticker_info):
     return None
 
 def scrape():
-    brl_obj = yf.Ticker("BRL=X")
+    # ── USD/BRL ──────────────────────────────────────────────
+    brl_obj  = yf.Ticker("BRL=X")
     brl_hist = brl_obj.history(period="5d")
 
     usd_brl = usd_var = usd_min = usd_max = None
@@ -41,7 +39,17 @@ def scrape():
             prev_brl = brl_hist.iloc[-2]['Close']
             usd_var  = safe_float(last_brl['Close'] - prev_brl, 4)
 
-    # ICE NY Coffee C (KC=F) — US¢/lb
+    # ── EUR/BRL ──────────────────────────────────────────────
+    eur_obj  = yf.Ticker("EURBRL=X")
+    eur_hist = eur_obj.history(period="5d")
+    eur_brl = eur_var = None
+    if not eur_hist.empty:
+        last_eur = eur_hist.iloc[-1]
+        eur_brl  = safe_float(last_eur['Close'], 4)
+        if len(eur_hist) >= 2:
+            eur_var = safe_float(last_eur['Close'] - eur_hist.iloc[-2]['Close'], 4)
+
+    # ── ICE NY Coffee C (KC=F) ───────────────────────────────
     kc_obj  = yf.Ticker("KC=F")
     kc_info = kc_obj.info
     kc_hist = kc_obj.history(period="15d")
@@ -61,86 +69,56 @@ def scrape():
                 var_dia = safe_float(preco_ny - prev_kc)
                 var_pct = safe_float((preco_ny - prev_kc) / prev_kc * 100)
         venc_prox = venc_label(kc_info) or "—"
+        ny_brl = safe_float(preco_ny * 132.277 / 100 * usd_brl, 0) if preco_ny and usd_brl else None
         ny = {
             "preco": preco_ny, "var_dia": var_dia, "var_pct": var_pct,
             "abertura": abertura, "maxima": maxima, "minima": minima,
-            "volume": volume, "venc_prox": venc_prox,
+            "volume": volume, "venc_prox": venc_prox, "ny_brl": ny_brl,
         }
 
-    # B3 Conilon — tenta CCM=F; se vazio, estima via KC + câmbio
+    # ── Conilon: estimativa via KC + câmbio ──────────────────
+    # Nota: não há fonte pública gratuita com API de conilon diário em R$/sc.
+    # CEPEA bloqueado por Cloudflare; B3 exige renderização JS.
+    # Estimativa: KC(US¢/lb) × 132,277lb/sc ÷ 100 × BRL × fator_conilon(0,60)
     b3 = None
-    ccm_obj  = yf.Ticker("CCM=F")
-    ccm_hist = ccm_obj.history(period="15d")
-    if not ccm_hist.empty and len(ccm_hist) >= 1:
-        last_cc  = ccm_hist.iloc[-1]
-        preco_b3 = safe_float(last_cc['Close'])
-        ab_b3    = safe_float(last_cc['Open'])
-        max_b3   = safe_float(last_cc['High'])
-        min_b3   = safe_float(last_cc['Low'])
-        vol_b3   = int(last_cc['Volume']) if last_cc['Volume'] else 0
-        vd_b3 = vp_b3 = None
-        if len(ccm_hist) >= 2:
-            prev_cc = safe_float(ccm_hist.iloc[-2]['Close'])
-            if prev_cc and preco_b3:
-                vd_b3 = safe_float(preco_b3 - prev_cc)
-                vp_b3 = safe_float((preco_b3 - prev_cc) / prev_cc * 100)
-        b3 = {
-            "preco": preco_b3, "var_dia": vd_b3, "var_pct": vp_b3,
-            "abertura": ab_b3, "maxima": max_b3, "minima": min_b3,
-            "volume": vol_b3, "venc_prox": "—",
-        }
-    elif ny and usd_brl:
-        # Estimativa: KC (US¢/lb) * 60lb_por_sc / 100 * BRL — fator conilon ~0,60
-        # Essa é uma aproximação, não dado real
+    if ny and usd_brl:
         fator_conilon = 0.60
-        lb_per_sc = 132.277  # 60 kg em libras
+        lb_per_sc     = 132.277
         preco_est = safe_float(ny["preco"] * lb_per_sc / 100 * usd_brl * fator_conilon)
         b3 = {
             "preco": preco_est, "var_dia": None, "var_pct": ny.get("var_pct"),
             "abertura": None, "maxima": None, "minima": None,
-            "volume": 0, "venc_prox": ny.get("venc_prox", "—"),
-            "estimado": True,
+            "volume": None, "venc_prox": None, "estimado": True,
         }
 
-    # Histórico dos últimos ~7 pregões
+    # ── Histórico (últimos 7 pregões KC) ─────────────────────
     hist_labels, hist_ny, hist_b3 = [], [], []
     if not kc_hist.empty:
-        ultimos = kc_hist.tail(7)
-        for dt_idx, row in ultimos.iterrows():
+        for dt_idx, row in kc_hist.tail(7).iterrows():
             dt = dt_idx.to_pydatetime()
-            hist_labels.append(fmt_mes(dt))
+            hist_labels.append(f"{dt.day:02d}/{dt.month:02d}")
             hist_ny.append(safe_float(row['Close']))
+        if usd_brl:
+            fator_conilon, lb_per_sc = 0.60, 132.277
+            hist_b3 = [
+                safe_float(v * lb_per_sc / 100 * usd_brl * fator_conilon) if v else None
+                for v in hist_ny
+            ]
 
-    if not ccm_hist.empty and len(ccm_hist) >= 1:
-        ultimos_b3 = ccm_hist.tail(7)
-        for _, row in ultimos_b3.iterrows():
-            hist_b3.append(safe_float(row['Close']))
-    elif ny and usd_brl and hist_ny:
-        # Estimativa histórica de B3
-        fator_conilon = 0.60
-        lb_per_sc = 132.277
-        hist_b3 = [
-            safe_float(v * lb_per_sc / 100 * usd_brl * fator_conilon) if v else None
-            for v in hist_ny
-        ]
-
-    # Contratos futuros — próximos vencimentos do KC
+    # ── Contratos futuros ─────────────────────────────────────
     futuros = []
     try:
         for exp_str in (kc_obj.options or [])[:3]:
-            # exp_str é "YYYY-MM-DD"
             dt_exp = datetime.strptime(exp_str, "%Y-%m-%d")
             venc   = f"{MABREV[dt_exp.month-1]}/{str(dt_exp.year)[2:]}"
-            opt    = kc_obj.option_chain(exp_str)
             futuros.append({
                 "bolsa": "ICE NY", "tag": "ny", "venc": venc,
-                "preco": ny["preco"] if ny else None,
+                "preco":   ny["preco"]   if ny else None,
                 "var_dia": ny["var_dia"] if ny else None,
                 "var_pct": ny["var_pct"] if ny else None,
-                "volume": ny["volume"] if ny else 0,
+                "volume":  ny["volume"]  if ny else 0,
             })
     except Exception:
-        # fallback: usa apenas o contrato principal
         if ny:
             futuros.append({
                 "bolsa": "ICE NY", "tag": "ny",
@@ -150,21 +128,22 @@ def scrape():
             })
     if b3:
         futuros.append({
-            "bolsa": "B3", "tag": "b3",
-            "venc": b3.get("venc_prox", "—"),
-            "preco": b3["preco"], "var_dia": b3["var_dia"],
-            "var_pct": b3["var_pct"], "volume": b3["volume"],
+            "bolsa": "Estimativa", "tag": "b3", "venc": "—",
+            "preco": b3["preco"], "var_dia": None,
+            "var_pct": b3["var_pct"], "volume": None,
         })
 
     agora = datetime.now(tz=timezone(timedelta(hours=-3))).strftime("%d/%m/%Y %H:%M")
     return {
         "atualizado_em": agora,
-        "fonte": "yfinance / ICE NY (KC=F) · USD/BRL (BRL=X)",
+        "fonte": "yfinance / ICE NY (KC=F) · USD/BRL (BRL=X) · EUR/BRL (EURBRL=X)",
         "usd_brl": usd_brl,
         "usd_var": usd_var,
         "usd_min": usd_min,
         "usd_max": usd_max,
         "usd_hora": usd_hora,
+        "eur_brl": eur_brl,
+        "eur_var": eur_var,
         "ny": ny,
         "b3": b3,
         "futuros": futuros,
@@ -173,14 +152,20 @@ def scrape():
         "hist_b3": hist_b3,
     }
 
+
 if __name__ == "__main__":
     data = scrape()
     with open("bolsa.json", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     print(f"bolsa.json gerado: {data['atualizado_em']}")
     if data['ny']:
-        print(f"  ICE NY: {data['ny']['preco']} US¢/lb  ({data['ny']['var_pct']:+.2f}%)")
+        pct = data['ny']['var_pct']
+        print(f"  ICE NY:  {data['ny']['preco']} US¢/lb  ({pct:+.2f}%)")
     if data['b3']:
-        estimado = " (estimado)" if data['b3'].get('estimado') else ""
-        print(f"  B3: {data['b3']['preco']} R$/sc{estimado}")
+        pct_b3 = data['b3']['var_pct']
+        pct_str = f"({pct_b3:+.2f}%)" if pct_b3 is not None else ""
+        print(f"  Conilon: {data['b3']['preco']} R$/sc  {pct_str}  [estimativa]")
     print(f"  USD/BRL: {data['usd_brl']}")
+    print(f"  EUR/BRL: {data['eur_brl']}")
+    if data['ny'] and data['ny'].get('ny_brl'):
+        print(f"  KC equiv BRL: R$ {data['ny']['ny_brl']}/sc")

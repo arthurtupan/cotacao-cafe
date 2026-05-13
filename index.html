@@ -113,6 +113,13 @@
     .nav-btn{padding:12px 10px;font-size:12px}
     .logo span{display:none}
   }
+  .company-footer{background:var(--bg);border-top:0.5px solid var(--border);padding:18px 1rem;margin-top:2rem}
+  .company-footer-inner{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .company-logo{height:36px;width:auto;object-fit:contain}
+  .company-links{display:flex;gap:20px;font-size:12px}
+  .company-links a{color:var(--text2);text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .15s}
+  .company-links a:hover{color:var(--text)}
+  @media(max-width:500px){.company-footer-inner{flex-direction:column;align-items:flex-start;gap:12px}}
 </style>
 </head>
 <body>
@@ -244,12 +251,17 @@
       <div class="divider"></div>
       <div class="dolar-item"><div class="dolar-label">Mínima / Máxima</div><div class="dolar-val" id="b-usd-mm" style="font-size:13px;font-weight:400;color:var(--text2)">—</div></div>
       <div class="divider"></div>
+      <div class="dolar-item"><div class="dolar-label">EUR / BRL</div><div class="dolar-val" id="b-eur">—</div></div>
+      <div class="divider"></div>
+      <div class="dolar-item"><div class="dolar-label">Variação EUR</div><div class="dolar-val" id="b-eur-var" style="font-size:14px">—</div></div>
+      <div class="divider"></div>
       <div class="dolar-item"><div class="dolar-label">Atualizado</div><div class="dolar-val" id="b-usd-hora" style="font-size:13px;font-weight:400;color:var(--text2)">—</div></div>
     </div>
     <div class="bolsa-top" id="b-cards">
       <div class="bolsa-card"><div style="text-align:center;padding:2.5rem;color:var(--text2)"><span class="spinner"></span> Buscando ICE NY...</div></div>
       <div class="bolsa-card"><div style="text-align:center;padding:2.5rem;color:var(--text2)"><span class="spinner"></span> Buscando B3...</div></div>
     </div>
+    <div class="info-strip" id="b-diferencial" style="display:none"></div>
     <div class="sec-label">Contratos futuros em aberto</div>
     <div class="table-wrap">
       <table>
@@ -268,10 +280,26 @@
         <canvas id="b-chart" role="img" aria-label="Histórico de preços em bolsa">Histórico ICE NY e B3.</canvas>
       </div>
     </div>
-    <p class="footer">Fontes: ICE Futures US (NY) · B3 (Brasil) · Dados com delay de ~15 min · ICE NY em US¢/lb · B3 em R$/sc 60kg</p>
+    <p class="footer">Fontes: ICE Futures US (NY) · yfinance · ICE NY em US¢/lb · Conilon em R$/sc 60kg (estimativa) · Câmbio com delay ~15 min</p>
   </div>
 
 </div>
+
+<footer class="company-footer">
+  <div class="company-footer-inner">
+    <img src="logo.png" alt="RTAK Tech" class="company-logo">
+    <div class="company-links">
+      <a href="https://rtaktech.com.br" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        rtaktech.com.br
+      </a>
+      <a href="https://www.instagram.com/rtaktech" target="_blank" rel="noopener">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        @rtaktech
+      </a>
+    </div>
+  </div>
+</footer>
 
 <script>
 /* ══ UTILS ══ */
@@ -332,6 +360,7 @@ async function loadDaily(){
 
     set('d-mes', json.mes || `${MABREV[(json.mes_num||new Date().getMonth()+1)-1]} ${json.ano||new Date().getFullYear()}`);
     badgeSet('d','live',`Atualizado em ${json.atualizado_em||hora()}`);
+    tryRenderDiferencial();
   }catch(e){
     badgeSet('d','err','Erro ao carregar · '+hora());
     document.getElementById('d-tbody').innerHTML=`<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--text2)">
@@ -501,36 +530,50 @@ async function loadBolsa(){
 
 function renderBolsa(p){
   const vUsd=p.usd_var!=null?(p.usd_var>=0?`<span class="up">▲ +${Number(p.usd_var).toFixed(4)}</span>`:`<span class="down">▼ ${Number(p.usd_var).toFixed(4)}</span>`):'—';
+  const vEur=p.eur_var!=null?(p.eur_var>=0?`<span class="up">▲ +${Number(p.eur_var).toFixed(4)}</span>`:`<span class="down">▼ ${Number(p.eur_var).toFixed(4)}</span>`):'—';
   set('b-usd','R$ '+Number(p.usd_brl).toFixed(4));
   set('b-usd-var',vUsd);
   set('b-usd-mm',p.usd_min&&p.usd_max?Number(p.usd_min).toFixed(4)+' / '+Number(p.usd_max).toFixed(4):'—');
   set('b-usd-hora',p.usd_hora||'—');
-  document.getElementById('b-cards').innerHTML=bolsaCard('ICE Nova York','Café Arábica · Contrato C (KC)','US¢/lb','ny',p.ny)+bolsaCard('B3 Brasil','Café Conilon','R$/sc 60kg','b3',p.b3);
+  set('b-eur',p.eur_brl?'R$ '+Number(p.eur_brl).toFixed(4):'—');
+  set('b-eur-var',vEur);
+  const conilon_sub=p.b3&&p.b3.estimado?'Café Conilon · Índice estimado':'Café Conilon · Indicador CEPEA';
+  document.getElementById('b-cards').innerHTML=bolsaCard('ICE Nova York','Café Arábica · Contrato C (KC)','US¢/lb','ny',p.ny)+bolsaCard('Conilon',conilon_sub,'R$/sc 60kg','b3',p.b3);
   if(p.futuros&&p.futuros.length){
     document.getElementById('b-futuros').innerHTML=p.futuros.map(f=>{
-      const v=f.var_pct;const cls=v>0?'up':v<0?'down':'';
-      return `<tr><td><span class="${f.tag==='ny'?'tag-ny-sm':'tag-b3-sm'}">${f.bolsa}</span></td><td>${f.venc}</td><td>${Number(f.preco).toLocaleString('en-US',{minimumFractionDigits:2})}</td><td class="${cls}" style="font-size:12px">${v>=0?'+':''}${Number(f.var_dia).toFixed(2)}</td><td>${varHtml(v,true)}</td><td>${Number(f.volume).toLocaleString('pt-BR')}</td></tr>`;
+      const v=f.var_pct;const cls=v!=null?(v>0?'up':v<0?'down':''):'';
+      const precoFmt=f.preco!=null?Number(f.preco).toLocaleString('en-US',{minimumFractionDigits:2}):'—';
+      const varDiaFmt=f.var_dia!=null?((v>=0?'+':'')+Number(f.var_dia).toFixed(2)):'—';
+      const volFmt=f.volume!=null?Number(f.volume).toLocaleString('pt-BR'):'—';
+      return `<tr><td><span class="${f.tag==='ny'?'tag-ny-sm':'tag-b3-sm'}">${f.bolsa}</span></td><td>${f.venc}</td><td>${precoFmt}</td><td class="${cls}" style="font-size:12px">${varDiaFmt}</td><td>${varHtml(v,true)}</td><td>${volFmt}</td></tr>`;
     }).join('');
   }
   if(p.hist_labels)bData=p;
   renderBChart();
+  tryRenderDiferencial();
 }
 
 function bolsaCard(nome,sub,unidade,tag,d){
   if(!d)return`<div class="bolsa-card"><div style="padding:2.5rem;text-align:center;color:var(--text2)">Dados indisponíveis</div></div>`;
   const v=d.var_pct;const cls=v>0?'up':v<0?'down':'';const sinal=v>=0?'▲ +':'▼ ';
-  const tagHtml=tag==='ny'?'<span class="tag tag-ny">NY</span>':'<span class="tag tag-b3">B3</span>';
-  const fmt=n=>Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const tagHtml=tag==='ny'?'<span class="tag tag-ny">NY</span>':(d.estimado?'<span class="tag tag-b3">EST</span>':'<span class="tag tag-b3">CEPEA</span>');
+  const fmt=n=>n!=null?Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+  const fmtBR=n=>n!=null?Number(n).toLocaleString('pt-BR'):'—';
+  const vencLine=d.venc_prox?` · próx. venc. ${d.venc_prox}`:(tag==='b3'?' · Preço à vista':'');
+  const varLine=v!=null?`${sinal}${Math.abs(v).toFixed(2)}% (${v>=0?'+':''}${fmt(d.var_dia)})`:'—';
+  const nyBrlLine=tag==='ny'&&d.ny_brl!=null
+    ?`<div class="bs-label">Equiv. R$/sc</div><div class="bs-val" style="font-weight:500">R$ ${Number(d.ny_brl).toLocaleString('pt-BR',{maximumFractionDigits:0})}</div>`:'';
   return `<div class="bolsa-card">
     <div class="bolsa-head"><div><div class="bolsa-nome">${nome}</div><div class="bolsa-sub">${sub}</div></div>${tagHtml}</div>
     <div class="bolsa-price">${fmt(d.preco)}</div>
-    <div class="bolsa-unit">${unidade} · próx. venc. ${d.venc_prox||'—'}</div>
-    <div class="bolsa-var ${cls}">${sinal}${Math.abs(v).toFixed(2)}% (${v>=0?'+':''}${fmt(d.var_dia)})</div>
+    <div class="bolsa-unit">${unidade}${vencLine}</div>
+    <div class="bolsa-var ${cls}">${varLine}</div>
     <div class="bolsa-stats">
       <div class="bs-label">Abertura</div><div class="bs-val">${fmt(d.abertura)}</div>
       <div class="bs-label">Máxima</div><div class="bs-val">${fmt(d.maxima)}</div>
       <div class="bs-label">Mínima</div><div class="bs-val">${fmt(d.minima)}</div>
-      <div class="bs-label">Volume</div><div class="bs-val">${Number(d.volume).toLocaleString('pt-BR')}</div>
+      <div class="bs-label">Volume</div><div class="bs-val">${fmtBR(d.volume)}</div>
+      ${nyBrlLine}
     </div>
   </div>`;
 }
@@ -538,25 +581,25 @@ function bolsaCard(nome,sub,unidade,tag,d){
 function renderBolsaFallback(){
   set('b-usd','R$ 4,9110');set('b-usd-var','<span class="down">▼ -0.0390</span>');
   set('b-usd-mm','4,8986 / 4,9649');set('b-usd-hora','06/05/2026');
+  set('b-eur','R$ 5,9480');set('b-eur-var','<span class="down">▼ -0.0150</span>');
   bData={hist_labels:['28/04','29/04','30/04','04/05','05/05','06/05'],
     hist_ny:[291.20,289.80,290.55,289.10,288.90,288.00],
     hist_b3:[1438,1432,1435,1428,1424,1420]};
   document.getElementById('b-cards').innerHTML=
     bolsaCard('ICE Nova York','Café Arábica · Contrato C (KC)','US¢/lb','ny',{preco:288.00,var_pct:-0.88,var_dia:-2.55,abertura:290.55,maxima:291.20,minima:287.40,volume:18200,venc_prox:'Jul/26'})+
-    bolsaCard('B3 Brasil','Café Conilon','R$/sc 60kg','b3',{preco:1420.00,var_pct:-0.84,var_dia:-12.00,abertura:1432.00,maxima:1436.00,minima:1418.00,volume:1840,venc_prox:'Jul/26'});
+    bolsaCard('Conilon','Café Conilon · Índice estimado','R$/sc 60kg','b3',{preco:1100.00,var_pct:-0.88,var_dia:null,abertura:null,maxima:null,minima:null,volume:null,venc_prox:null,estimado:true});
   document.getElementById('b-futuros').innerHTML=`
     <tr><td><span class="tag-ny-sm">ICE NY</span></td><td>Jul/26</td><td>288,00</td><td class="down" style="font-size:12px">-2,55</td><td><span class="down" style="font-size:11px">▼ -0.88%</span></td><td>18.200</td></tr>
     <tr><td><span class="tag-ny-sm">ICE NY</span></td><td>Set/26</td><td>291,50</td><td class="down" style="font-size:12px">-2,10</td><td><span class="down" style="font-size:11px">▼ -0.72%</span></td><td>6.300</td></tr>
     <tr><td><span class="tag-ny-sm">ICE NY</span></td><td>Dez/26</td><td>295,80</td><td class="down" style="font-size:12px">-1,80</td><td><span class="down" style="font-size:11px">▼ -0.60%</span></td><td>2.100</td></tr>
-    <tr><td><span class="tag-b3-sm">B3</span></td><td>Jul/26</td><td>1.420,00</td><td class="down" style="font-size:12px">-12,00</td><td><span class="down" style="font-size:11px">▼ -0.84%</span></td><td>1.840</td></tr>
-    <tr><td><span class="tag-b3-sm">B3</span></td><td>Set/26</td><td>1.435,00</td><td class="down" style="font-size:12px">-9,00</td><td><span class="down" style="font-size:11px">▼ -0.62%</span></td><td>620</td></tr>`;
+    <tr><td><span class="tag-b3-sm">EST</span></td><td>—</td><td>1.100,00</td><td style="font-size:12px">—</td><td><span class="down" style="font-size:11px">▼ -0.88%</span></td><td>—</td></tr>`;
   renderBChart();
 }
 
 function renderBChart(){
   if(!bData.hist_labels)return;
   if(bTab==='both'){
-    setLegend('b-legend',[['#185FA5','ICE NY (US¢/lb)'],['#0F6E56','B3 (R$/sc)']]);
+    setLegend('b-legend',[['#185FA5','ICE NY (US¢/lb)'],['#0F6E56','Conilon (R$/sc · estimativa)']]);
     if(bChart)bChart.destroy();
     bChart=new Chart(document.getElementById('b-chart'),{type:'line',
       data:{labels:bData.hist_labels,datasets:[
@@ -579,6 +622,25 @@ function renderBChart(){
   bChart=mkChart('b-chart',bData.hist_labels,
     [{label:cfg.label,data:cfg.data,borderColor:cfg.color,backgroundColor:cfg.color+'18',fill:true,borderDash:[]}],
     {yFmt:v=>cfg.fmt(v),tipFmt:c=>' '+c.dataset.label+': '+cfg.fmt(c.parsed.y),skipX:false,ptR:4});
+}
+
+function tryRenderDiferencial(){
+  const el=document.getElementById('b-diferencial');
+  if(!el)return;
+  if(!dData.length||!bData.ny||!bData.ny.ny_brl){el.style.display='none';return;}
+  const dura=dData[dData.length-1].dura;
+  if(!dura){el.style.display='none';return;}
+  const diff=dura-bData.ny.ny_brl;
+  const pct=(diff/bData.ny.ny_brl*100).toFixed(1);
+  const cls=diff>0?'up':diff<0?'down':'';
+  const sign=diff>=0?'+':'';
+  const label=diff>0?'prêmio':diff<0?'desconto':'par';
+  set('b-diferencial',
+    `Diferencial CCCV Arábica Dura × KC: `+
+    `${fmtBRL(dura)} (CCCV) · ${fmtBRL(bData.ny.ny_brl)} (KC equiv.) · `+
+    `<span class="${cls}" style="font-weight:500">${sign}${fmtBRL(diff)} (${sign}${pct}%) — ${label}</span>`
+  );
+  el.style.display='';
 }
 
 /* ══ SHARED ══ */

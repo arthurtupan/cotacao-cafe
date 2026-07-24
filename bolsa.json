@@ -1,28 +1,28 @@
 {
-  "atualizado_em": "23/07/2026 16:42",
+  "atualizado_em": "24/07/2026 16:43",
   "fonte": "yfinance / ICE NY (KC=F) · USD/BRL (BRL=X) · EUR/BRL (EURBRL=X)",
-  "usd_brl": 5.0857,
-  "usd_var": -0.0018,
-  "usd_min": 5.0438,
-  "usd_max": 5.0921,
-  "usd_hora": "23/07/2026",
-  "eur_brl": 5.7855,
-  "eur_var": -0.0116,
+  "usd_brl": 5.0792,
+  "usd_var": 0.0167,
+  "usd_min": 5.0492,
+  "usd_max": 5.0917,
+  "usd_hora": "24/07/2026",
+  "eur_brl": 5.7747,
+  "eur_var": -0.0023,
   "ny": {
-    "preco": 310.75,
-    "var_dia": -5.9,
-    "var_pct": -1.86,
-    "abertura": 306.55,
-    "maxima": 321.3,
-    "minima": 308.25,
-    "volume": 12910,
+    "preco": 314.2,
+    "var_dia": 4.8,
+    "var_pct": 1.55,
+    "abertura": 297.7,
+    "maxima": 318.55,
+    "minima": 306.4,
+    "volume": 14168,
     "venc_prox": "Dez/26",
-    "ny_brl": 2090.0
+    "ny_brl": 2111.0
   },
   "b3": {
-    "preco": 1254.29,
+    "preco": 1266.59,
     "var_dia": null,
-    "var_pct": -1.86,
+    "var_pct": 1.55,
     "abertura": null,
     "maxima": null,
     "minima": null,
@@ -35,37 +35,37 @@
       "bolsa": "Estimativa",
       "tag": "b3",
       "venc": "—",
-      "preco": 1254.29,
+      "preco": 1266.59,
       "var_dia": null,
-      "var_pct": -1.86,
+      "var_pct": 1.55,
       "volume": null
     }
   ],
   "hist_labels": [
-    "15/07",
     "16/07",
     "17/07",
     "20/07",
     "21/07",
     "22/07",
-    "23/07"
+    "23/07",
+    "24/07"
   ],
   "hist_ny": [
-    334.45,
     321.3,
     328.45,
     334.4,
     331.95,
     316.65,
-    310.75
+    309.4,
+    314.2
   ],
   "hist_b3": [
-    1349.95,
-    1296.87,
-    1325.73,
-    1349.75,
-    1339.86,
-    1278.1,
-    1254.29
+    1295.21,
+    1324.04,
+    1348.02,
+    1338.15,
+    1276.47,
+    1247.24,
+    1266.59
   ]
 }

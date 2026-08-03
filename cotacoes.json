@@ -1,149 +1,17 @@
 {
-  "atualizado_em": "31/07/2026 19:48",
-  "mes": "Julho 2026",
-  "mes_num": 7,
+  "atualizado_em": "03/08/2026 19:53",
+  "mes": "Agosto 2026",
+  "mes_num": 8,
   "ano": 2026,
-  "media_dura": 1561.04,
-  "media_rio": 1284.65,
-  "media_conilon": 1561.04,
+  "media_dura": 1586.0,
+  "media_rio": 1287.0,
+  "media_conilon": 1036.0,
   "cotacoes": [
     {
-      "dia": 1,
-      "dura": 1495.0,
-      "rio": 1268.0,
-      "conilon": 1495.0
-    },
-    {
-      "dia": 2,
-      "dura": 1503.0,
-      "rio": 1255.0,
-      "conilon": 1503.0
-    },
-    {
       "dia": 3,
-      "dura": 1490.0,
-      "rio": 1270.0,
-      "conilon": 1490.0
-    },
-    {
-      "dia": 6,
-      "dura": 1598.0,
-      "rio": 1316.0,
-      "conilon": 1598.0
-    },
-    {
-      "dia": 7,
-      "dura": 1523.0,
-      "rio": 1285.0,
-      "conilon": 1523.0
-    },
-    {
-      "dia": 8,
-      "dura": 1508.0,
-      "rio": 1268.0,
-      "conilon": 1508.0
-    },
-    {
-      "dia": 9,
-      "dura": 1590.0,
-      "rio": 1320.0,
-      "conilon": 1590.0
-    },
-    {
-      "dia": 10,
-      "dura": 1565.0,
-      "rio": 1290.0,
-      "conilon": 1565.0
-    },
-    {
-      "dia": 13,
-      "dura": 1570.0,
-      "rio": 1286.0,
-      "conilon": 1570.0
-    },
-    {
-      "dia": 14,
-      "dura": 1553.0,
-      "rio": 1280.0,
-      "conilon": 1553.0
-    },
-    {
-      "dia": 15,
-      "dura": 1573.0,
-      "rio": 1303.0,
-      "conilon": 1573.0
-    },
-    {
-      "dia": 16,
-      "dura": 1546.0,
-      "rio": 1270.0,
-      "conilon": 1546.0
-    },
-    {
-      "dia": 17,
-      "dura": 1580.0,
-      "rio": 1300.0,
-      "conilon": 1580.0
-    },
-    {
-      "dia": 20,
-      "dura": 1576.0,
-      "rio": 1296.0,
-      "conilon": 1576.0
-    },
-    {
-      "dia": 21,
-      "dura": 1576.0,
-      "rio": 1288.0,
-      "conilon": 1576.0
-    },
-    {
-      "dia": 22,
-      "dura": 1559.0,
-      "rio": 1268.0,
-      "conilon": 1559.0
-    },
-    {
-      "dia": 23,
-      "dura": 1547.0,
-      "rio": 1253.0,
-      "conilon": 1547.0
-    },
-    {
-      "dia": 24,
-      "dura": 1540.0,
-      "rio": 1247.0,
-      "conilon": 1540.0
-    },
-    {
-      "dia": 27,
       "dura": 1586.0,
-      "rio": 1290.0,
-      "conilon": 1586.0
-    },
-    {
-      "dia": 28,
-      "dura": 1630.0,
-      "rio": 1309.0,
-      "conilon": 1630.0
-    },
-    {
-      "dia": 29,
-      "dura": 1604.0,
-      "rio": 1298.0,
-      "conilon": 1604.0
-    },
-    {
-      "dia": 30,
-      "dura": 1587.0,
       "rio": 1287.0,
-      "conilon": 1587.0
-    },
-    {
-      "dia": 31,
-      "dura": 1605.0,
-      "rio": 1300.0,
-      "conilon": 1605.0
+      "conilon": 1036.0
     }
   ]
 }

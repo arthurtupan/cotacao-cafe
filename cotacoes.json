@@ -1,11 +1,11 @@
 {
-  "atualizado_em": "21/09/2026 21:56",
+  "atualizado_em": "22/09/2026 21:14",
   "mes": "Setembro 2026",
   "mes_num": 9,
   "ano": 2026,
-  "media_dura": 1500.31,
-  "media_rio": 1194.46,
-  "media_conilon": 934.69,
+  "media_dura": 1493.14,
+  "media_rio": 1185.79,
+  "media_conilon": 931.43,
   "cotacoes": [
     {
       "dia": 1,
@@ -84,6 +84,12 @@
       "dura": 1420.0,
       "rio": 1090.0,
       "conilon": 909.0
+    },
+    {
+      "dia": 22,
+      "dura": 1400.0,
+      "rio": 1073.0,
+      "conilon": 889.0
     }
   ]
 }
